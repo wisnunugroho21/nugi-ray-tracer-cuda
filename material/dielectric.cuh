@@ -6,7 +6,7 @@ class Dielectric : public Material {
 	public:
 		__device__ Dielectric(float indexRefraction) : indexRefraction{indexRefraction} {}
 
-		__device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord &scattered, curandState* randState) const override;
+		__device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const override;
 		__device__ static float reflactance(float cosine, float refIdx);
 
 	private:
@@ -14,7 +14,7 @@ class Dielectric : public Material {
 };
 
 __device__
-bool Dielectric::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord &scattered, curandState* randState) const {
+bool Dielectric::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const {
 	float refractionRatio = hit.faceNormal.frontFace ? (1.0f / this->indexRefraction) : this->indexRefraction;
 
 	Arr3 unitDirection = ray.direction().unitVector();
@@ -30,8 +30,8 @@ bool Dielectric::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord &sc
 		direction = Arr3::refract(unitDirection, hit.faceNormal.normal, refractionRatio);
 	}	
 
-	scattered.colorAttenuation = Arr3(1.0f, 1.0f, 1.0f);
-	scattered.newRay = Ray(hit.point, direction);
+	scattered->colorAttenuation = Arr3(1.0f, 1.0f, 1.0f);
+	scattered->newRay = Ray(hit.point, direction);
 
 	return true;
 }

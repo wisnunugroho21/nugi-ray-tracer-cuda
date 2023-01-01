@@ -5,5 +5,5 @@
 
 class Material {
   public:
-    __device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord &scattered, curandState* randState) const = 0;
+    __device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const = 0;
 };

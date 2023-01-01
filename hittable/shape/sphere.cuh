@@ -7,7 +7,7 @@ class Sphere : public Hittable {
   public:
     __device__ Sphere(Arr3 center, float radius, Material *material) : center{center}, radius{radius}, material{material} {}
 
-    __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord &hit, MaterialRecord &mat) const override;
+    __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const override;
 
   private:
     Arr3 center;
@@ -16,7 +16,7 @@ class Sphere : public Hittable {
 };
 
 __device__
-bool Sphere::hit(const Ray &r, float tMin, float tMax, HitRecord &hit, MaterialRecord &mat) const { 
+bool Sphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const { 
 	Arr3 oc = r.origin() - this->center;
 
 	auto a = r.direction().lengthSquared();
@@ -36,12 +36,12 @@ bool Sphere::hit(const Ray &r, float tMin, float tMax, HitRecord &hit, MaterialR
 		}
 	}
 
-	hit.t = root;
-	hit.point = r.at(root);
+	hit->t = root;
+	hit->point = r.at(root);
 
-	Arr3 outwardNormal = (hit.point - this->center) / this->radius;
-	hit.faceNormal = FaceNormal(r, outwardNormal);
+	Arr3 outwardNormal = (hit->point - this->center) / this->radius;
+	hit->faceNormal = FaceNormal(r, outwardNormal);
 
-	mat.material = this->material;
+	mat->material = this->material;
 	return true;
 }

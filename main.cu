@@ -39,8 +39,8 @@ Arr3 tracing(const Ray& r, Hittable** world, curandState* randState) {
 	MaterialRecord mat;
 
 	for (size_t i = 0; i < 50; i++) {
-		if (world[0]->hit(curRay, 0.001f, FLT_MAX, hit, mat)) {
-			if (mat.material->scatter(curRay, hit, scat, randState)) {
+		if (world[0]->hit(curRay, 0.001f, FLT_MAX, &hit, &mat)) {
+			if (mat.material->scatter(curRay, hit, &scat, randState)) {
 				curAttenuation *= scat.colorAttenuation;
 				curRay = scat.newRay;
 			}
