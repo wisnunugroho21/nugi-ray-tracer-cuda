@@ -62,19 +62,34 @@ __global__
 void render(Arr3* frameBuffer, int width, int height, int nSample, Camera** cam, Hittable** world, curandState* randState) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     int j = threadIdx.y + blockIdx.y * blockDim.y;
+    int k = threadIdx.z + blockIdx.z * blockDim.z;
 
-    if (i >= width || j >= height) return;
-    int pixelIndex = j * width + i;
+    if (i >= width || j >= height || k >= nSample) return;
+    int pixelIndex = k + i * nSample + j * width * nSample;
 
     Arr3 color(0.0f, 0.0f, 0.0f);
     auto localRandState = randState[pixelIndex];
 
-    for (size_t s = 0; s < nSample; s++) {
-        auto u = float(i + randomFloat(&localRandState)) / (width - 1);
-        auto v = float(j + randomFloat(&localRandState)) / (height - 1);
+    auto u = float(i + randomFloat(&localRandState)) / (width - 1);
+    auto v = float(j + randomFloat(&localRandState)) / (height - 1);
 
-        Ray r = cam[0]->transform(u, v, &localRandState);
-        color += tracing(r, world, &localRandState);
+    Ray r = cam[0]->transform(u, v, &localRandState);
+    color += tracing(r, world, &localRandState);
+
+    frameBuffer[pixelIndex] = color;
+}
+
+__global__
+void sampling(Arr3* frameBuffers, Arr3* finalImageBuffers, int width, int height, int nSample) {
+    int i = threadIdx.x + blockIdx.x * blockDim.x;
+    int j = threadIdx.y + blockIdx.y * blockDim.y;
+
+    if (i >= width || j >= height) return;
+    Arr3 color(0.0f, 0.0f, 0.0f);
+
+    for (int k = 0; k < nSample; k++) {
+        int sampleIndex = k + i * nSample + j * width * nSample;
+        color += frameBuffers[sampleIndex];
     }
 
     color /= float(nSample);
@@ -82,7 +97,8 @@ void render(Arr3* frameBuffer, int width, int height, int nSample, Camera** cam,
     color[1] = sqrt(color[1]);
     color[2] = sqrt(color[2]);
 
-    frameBuffer[pixelIndex] = color;
+    int pixelIndex = i + j * width;
+    finalImageBuffers[pixelIndex] = color;
 }
 
 __global__
@@ -110,31 +126,33 @@ void freeWorld(Camera** cam, Hittable** hits, Material** mats, Hittable** world)
 }
 
 __global__
-void render_init(int max_x, int max_y, curandState* rand_state) {
+void render_init(int max_x, int max_y, int max_z, curandState* rand_state) {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
     int j = threadIdx.y + blockIdx.y * blockDim.y;
-    if ((i >= max_x) || (j >= max_y)) return;
-    int pixel_index = j * max_x + i;
-    // Original: Each thread gets same seed, a different sequence number, no offset
-    // curand_init(1984, pixel_index, 0, &rand_state[pixel_index]);
-    // BUGFIX, see Issue#2: Each thread gets different seed, same sequence for
-    // performance improvement of about 2x!
+    int k = threadIdx.z + blockIdx.z * blockDim.z;
+
+    if (i >= max_x || j >= max_y || k >= max_z) return;
+    int pixel_index = k + i * max_z + j * max_x * max_z;
+
     curand_init(1984 + pixel_index, 0, 0, &rand_state[pixel_index]);
 }
 
 int main() {
-    const size_t imageWidth = 1200;
-    const size_t imageHeight = 1200;
-    const int samplePerPixel = 30;
+    const int imageWidth = 1200;
+    const int imageHeight = 1200;
+    const int samplePerPixel = 32;
 
     int tx = 8;
     int ty = 8;
+    int tz = 8;
 
     Arr3* frameBuffers;
+    Arr3* finalImageBuffers;
     curandState* pixelRandState;
 
-    size_t fb_size = imageWidth * imageHeight * sizeof(Arr3);
-    size_t pixel_rand_size = imageWidth * imageHeight * sizeof(curandState);
+    size_t fb_size = static_cast<unsigned long long>(imageWidth * imageHeight * samplePerPixel) * sizeof(Arr3);
+    size_t finalImage_size = static_cast<unsigned long long>(imageWidth * imageHeight) * sizeof(Arr3);
+    size_t pixel_rand_size = static_cast<unsigned long long>(imageWidth * imageHeight * samplePerPixel) * sizeof(curandState);
 
     Camera** camera;
     Hittable** hits;
@@ -142,6 +160,7 @@ int main() {
     Hittable** world;
 
     checkCudaErrors(cudaMallocManaged((void**)&frameBuffers, fb_size));
+    checkCudaErrors(cudaMallocManaged((void**)&finalImageBuffers, finalImage_size));
     checkCudaErrors(cudaMalloc((void**)&pixelRandState, pixel_rand_size));
     checkCudaErrors(cudaMalloc((void**)&camera, sizeof(Camera*)));
     checkCudaErrors(cudaMalloc((void**)&hits, 3 * sizeof(Hittable*)));
@@ -152,16 +171,25 @@ int main() {
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 
-    std::cerr << "render" << std::flush;
+    std::cerr << "\rrendering" << std::flush;
 
-    dim3 blocks(imageWidth / tx, imageHeight / ty);
-    dim3 threads(tx, ty);
+    dim3 blocks(imageWidth / tx, imageHeight / ty, samplePerPixel / tz);
+    dim3 threads(tx, ty, tz);
 
-    render_init<<<blocks, threads>>>(imageWidth, imageHeight, pixelRandState);
+    render_init<<<blocks, threads>>>(imageWidth, imageHeight, samplePerPixel, pixelRandState);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 
     render<<<blocks, threads>>>(frameBuffers, imageWidth, imageHeight, samplePerPixel, camera, world, pixelRandState);
+    checkCudaErrors(cudaGetLastError());
+    checkCudaErrors(cudaDeviceSynchronize());
+
+    blocks = dim3(imageWidth / tx, imageHeight / ty);
+    threads = dim3(tx, ty);
+
+    std::cerr << "\rsampling" << std::flush;
+
+    sampling<<<blocks, threads>>>(frameBuffers, finalImageBuffers, imageWidth, imageHeight, samplePerPixel);
     checkCudaErrors(cudaGetLastError());
     checkCudaErrors(cudaDeviceSynchronize());
 
@@ -172,8 +200,8 @@ int main() {
 
     for (int j = imageHeight - 1; j >= 0; j--) {
         for (int i = 0; i < imageWidth; i++) {
-            size_t pixelIndex = i + j * imageWidth;
-            writeColor(ofl, frameBuffers[pixelIndex], samplePerPixel);
+            int pixelIndex = i + j * imageWidth;
+            writeColor(ofl, finalImageBuffers[pixelIndex]);
         }
     }
 
