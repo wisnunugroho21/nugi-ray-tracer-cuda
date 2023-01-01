@@ -90,8 +90,8 @@ void sampling(Arr3* frameBuffers, Arr3* finalImageBuffers, int width, int height
 	Arr3 color(0.0f, 0.0f, 0.0f);
 
 	for (int k = 0; k < nSample; k++) {
-			int sampleIndex = k + i * nSample + j * width * nSample;
-			color += frameBuffers[sampleIndex];
+		int sampleIndex = k + i * nSample + j * width * nSample;
+		color += frameBuffers[sampleIndex];
 	}
 
 	color /= float(nSample);
@@ -104,19 +104,58 @@ void sampling(Arr3* frameBuffers, Arr3* finalImageBuffers, int width, int height
 }
 
 __global__
-void createWorld(Camera** cam, Hittable** hits, Material** mats, Hittable** world) {
-	mats[0] = new Lambertian(Arr3(0.8f, 0.8f, 0.0f));
-	mats[1] = new Lambertian(Arr3(0.7f, 0.3f, 0.3f));
-	mats[2] = new Dielectric(1.5f);
-	mats[3] = new Metal(Arr3(0.8f, 0.6f, 0.2f), 1.0f);
+void createWorld(Camera** cam, Hittable** hits, Material** mats, Hittable** world, curandState* randState) {
+	auto localRandState = randState[0];
 
-	hits[0] = new Sphere(Arr3(0.0f, -100.5f, -1.0f), 100.0f, mats[0]);
-	hits[1] = new Sphere(Arr3(0.0f, 0.0f, -1.0f), 0.5f, mats[1]);
-	hits[2] = new Sphere(Arr3(-1.0f, 0.0f, -1.0f), 0.5f, mats[2]);
-	hits[3] = new Sphere(Arr3(1.0f, 0.0f, -1.0f), 0.5f, mats[3]);
+	mats[0] = new Lambertian(Arr3(0.5f, 0.5f, 0.5f));
+	hits[0] = new Sphere(Arr3(0.0f, -1000.0f, 0.0f), 1000.0f, mats[0]);
 
-	world[0] = new HittableList(hits, 4);
-	cam[0] = new Camera(Arr3(-2.0f, 2.0f, 1.0f), Arr3(0.0f, 0.0f, -1.0f), Arr3(0.0f, 1.0f, 0.0f), 40.0f, 1.0f, 0.0f, 10.0f);
+	int objIndex = 1;
+
+	for (int a = -11; a < 11; a++) {
+		for (int b = -11; b < 11; b++) {
+			auto choose_mat = randomFloat(&localRandState);
+			Arr3 center(a + 0.9f * randomFloat(&localRandState), 0.2f, b + 0.9f * randomFloat(&localRandState));
+
+			if ((center - Arr3(4.0f, 0.2f, 0.0f)).length() > 0.9f) {
+				if (choose_mat < 0.5f) {
+					auto albedo = Arr3::random(&localRandState) * Arr3::random(&localRandState);
+					mats[objIndex] = new Lambertian(albedo);
+
+				} else if (choose_mat < 0.75f) {
+					auto albedo = Arr3::random(0.5f, 1.0f, &localRandState);
+					auto fuzz = randomFloat(0.0f, 0.5f, &localRandState);
+
+					mats[objIndex] = new Metal(albedo, fuzz);
+				} else {
+					mats[objIndex] = new Dielectric(1.5f);
+				}
+
+				hits[objIndex] = new Sphere(center, 0.2f, mats[objIndex]);
+				objIndex++;
+			}
+		}
+	}
+
+	mats[objIndex] = new Dielectric(1.5f);
+	hits[objIndex] = new Sphere(Arr3(0.0f, 1.0f, 0.0f), 1.0f, mats[objIndex]);
+
+	mats[objIndex + 1] = new Lambertian(Arr3(0.4f, 0.2f, 0.1f));
+	hits[objIndex + 1] = new Sphere(Arr3(-4.0f, 1.0f, 0.0f), 1.0f, mats[objIndex + 1]);
+
+	mats[objIndex + 2] = new Metal(Arr3(0.7f, 0.6f, 0.5f), 0.1f);
+	hits[objIndex + 2] = new Sphere(Arr3(4.0f, 1.0f, 0.0f), 1.0f, mats[objIndex + 2]);
+
+	world[0] = new HittableList(hits, objIndex + 3);
+
+	Arr3 lookfrom(13.0f, 2.0f, 3.0f);
+	Arr3 lookat(0.0f, 0.0f, 0.0f);
+	Arr3 vup(0.0f, 1.0f, 0.0f);
+	auto dist_to_focus = 10.0f;
+	auto aperture = 0.1f;
+	auto aspect_ratio = 1.0f;
+
+	cam[0] = new Camera(lookfrom, lookat, vup, 20.0f, aspect_ratio, aperture, dist_to_focus);
 }
 
 __global__
@@ -124,19 +163,16 @@ void freeWorld(Camera** cam, Hittable** hits, Material** mats, Hittable** world)
 	delete cam[0];
 	delete world[0];
 
-	delete hits[0];
-	delete hits[1];
-	delete hits[2];
-	delete hits[3];
+	int numObjects = 22 * 22 + 3 + 1;
 
-	delete mats[0];
-	delete mats[1];
-	delete mats[2];
-	delete mats[3];
+	for (int i = 0; i < numObjects; i++) {
+		delete hits[i];
+		delete mats[i];
+	}
 }
 
 __global__
-void render_init(int max_x, int max_y, int max_z, curandState* rand_state) {
+void initPixelRand(int max_x, int max_y, int max_z, curandState* rand_state) {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 	int j = threadIdx.y + blockIdx.y * blockDim.y;
 	int k = threadIdx.z + blockIdx.z * blockDim.z;
@@ -145,6 +181,11 @@ void render_init(int max_x, int max_y, int max_z, curandState* rand_state) {
 	int pixel_index = k + i * max_z + j * max_x * max_z;
 
 	curand_init(1984 + pixel_index, 0, 0, &rand_state[pixel_index]);
+}
+
+__global__
+void initGlobalRand(curandState* rand_state) {
+	curand_init(1983, 0, 0, &rand_state[0]);
 }
 
 int main() {
@@ -156,8 +197,12 @@ int main() {
 	int ty = 8;
 	int tz = 8;
 
+	int numObjects = 22 * 22 + 3 + 1;
+
 	Arr3* frameBuffers;
 	Arr3* finalImageBuffers;
+
+	curandState* globalRandState;
 	curandState* pixelRandState;
 
 	size_t fb_size = static_cast<unsigned long long>(imageWidth * imageHeight * samplePerPixel) * sizeof(Arr3);
@@ -172,12 +217,17 @@ int main() {
 	checkCudaErrors(cudaMallocManaged((void**)&frameBuffers, fb_size));
 	checkCudaErrors(cudaMallocManaged((void**)&finalImageBuffers, finalImage_size));
 	checkCudaErrors(cudaMalloc((void**)&pixelRandState, pixel_rand_size));
+	checkCudaErrors(cudaMalloc((void**)&globalRandState, sizeof(curandState)));
 	checkCudaErrors(cudaMalloc((void**)&camera, sizeof(Camera*)));
-	checkCudaErrors(cudaMalloc((void**)&hits, 4 * sizeof(Hittable*)));
-	checkCudaErrors(cudaMalloc((void**)&mats, 4 * sizeof(Material*)));
+	checkCudaErrors(cudaMalloc((void**)&hits, numObjects * sizeof(Hittable*)));
+	checkCudaErrors(cudaMalloc((void**)&mats, numObjects * sizeof(Material*)));
 	checkCudaErrors(cudaMalloc((void**)&world, sizeof(Hittable*)));
 
-	createWorld<<<1, 1>>> (camera, hits, mats, world);
+	initGlobalRand<<<1, 1>>>(globalRandState);
+	checkCudaErrors(cudaGetLastError());
+	checkCudaErrors(cudaDeviceSynchronize());
+
+	createWorld<<<1, 1>>>(camera, hits, mats, world, globalRandState);
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
@@ -186,7 +236,7 @@ int main() {
 	dim3 blocks(imageWidth / tx, imageHeight / ty, samplePerPixel / tz);
 	dim3 threads(tx, ty, tz);
 
-	render_init<<<blocks, threads>>>(imageWidth, imageHeight, samplePerPixel, pixelRandState);
+	initPixelRand<<<blocks, threads>>>(imageWidth, imageHeight, samplePerPixel, pixelRandState);
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
@@ -209,10 +259,10 @@ int main() {
 	ofl << "P3\n" << imageWidth << " " << imageHeight << "\n255\n";
 
 	for (int j = imageHeight - 1; j >= 0; j--) {
-			for (int i = 0; i < imageWidth; i++) {
-					int pixelIndex = i + j * imageWidth;
-					writeColor(ofl, finalImageBuffers[pixelIndex]);
-			}
+		for (int i = 0; i < imageWidth; i++) {
+			int pixelIndex = i + j * imageWidth;
+			writeColor(ofl, finalImageBuffers[pixelIndex]);
+		}
 	}
 
 	checkCudaErrors(cudaDeviceSynchronize());
@@ -224,6 +274,7 @@ int main() {
 	checkCudaErrors(cudaFree(mats));
 	checkCudaErrors(cudaFree(hits));
 	checkCudaErrors(cudaFree(pixelRandState));
+	checkCudaErrors(cudaFree(globalRandState));
 	checkCudaErrors(cudaFree(frameBuffers));
 
 	cudaDeviceReset();
