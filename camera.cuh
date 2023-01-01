@@ -34,8 +34,8 @@ Camera::Camera(
 	double viewportWidth = aspectRatio * viewportHeight;
 
 	this->w = (lookfrom - lookat).unitVector();
-	this->u = cross(vup, this->w).unitVector();
-	this->v = cross(this->w, this->u); 
+	this->u = Arr3::cross(vup, this->w).unitVector();
+	this->v = Arr3::cross(this->w, this->u); 
 
 	this->origin = lookfrom;
 	this->horizontal = focusDist * viewportWidth * this->u;

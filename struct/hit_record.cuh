@@ -12,7 +12,7 @@ struct FaceNormal {
 
 __device__
 FaceNormal::FaceNormal(const Ray &comingRay, const Arr3 &outwardNormal) {
-  this->frontFace = dot(comingRay.direction(), outwardNormal);
+  this->frontFace = Arr3::dot(comingRay.direction(), outwardNormal) < 0;
   this->normal = this->frontFace ? outwardNormal : -outwardNormal;
 }
 

@@ -52,6 +52,11 @@ class Arr3
 		__device__ static Arr3 randomInUnitDisk(curandState *randState);
 		__device__ static Arr3 randomInUnitSphere(curandState *randState);
 
+		__host__ __device__ static float dot (const Arr3 &u, const Arr3 &v);
+		__host__ __device__ static Arr3 cross (const Arr3 &u, const Arr3 &v);
+		__host__ __device__ static Arr3 reflect(const Arr3& v, const Arr3& n);
+		__host__ __device__ static Arr3 refract(const Arr3& uv, const Arr3& n, float etaiOverEtat);
+
 	public:
 		float e[3];
 };
@@ -70,9 +75,6 @@ __host__ __device__ Arr3 operator + (Arr3 u, float t);
 __host__ __device__ Arr3 operator - (Arr3 u, float t);
 __host__ __device__ Arr3 operator * (Arr3 u, float t);
 __host__ __device__ Arr3 operator / (Arr3 u, float t);
-
-__host__ __device__ float dot (const Arr3 &u, const Arr3 &v);
-__host__ __device__ Arr3 cross (const Arr3 &u, const Arr3 &v);
 
 __host__ __device__
 Arr3::Arr3(float e1, float e2, float e3) {
@@ -176,7 +178,7 @@ float Arr3::lengthSquared() const {
 
 __host__ __device__
 float Arr3::length() const {
-	return sqrt(this->lengthSquared());
+	return sqrtf(this->lengthSquared());
 }
 
 __host__ __device__
@@ -298,15 +300,28 @@ Arr3 operator / (Arr3 u, float t) {
 }
 
 __host__ __device__
-float dot(const Arr3 &u, const Arr3 &v) {
+float Arr3::dot(const Arr3 &u, const Arr3 &v) {
 	return u.x() * v.x() + u.y() * v.y() + u.z() * v.z();
 }
 
 __host__ __device__
-Arr3 cross(const Arr3 &u, const Arr3 &v) {
+Arr3 Arr3::cross(const Arr3 &u, const Arr3 &v) {
 	return Arr3(
 		u.y() * v.z() - u.z() * v.y(),
 		u.z() * v.x() - u.x() * v.z(),
 		u.x() * v.y() - u.y() * v.x()
 	);
+}
+
+__host__ __device__ 
+Arr3 Arr3::reflect(const Arr3 &v, const Arr3 &n) {
+	return v - 2 * Arr3::dot(v, n) * n;
+}
+
+__host__ __device__ 
+Arr3  Arr3::refract(const Arr3 &uv, const Arr3 &n, float etaiOverEtat) {
+	auto cosTheta = fmin(Arr3::dot(-uv, n), 1.0f);
+	Arr3 rayOutPerp = etaiOverEtat * (uv + cosTheta * n);
+	Arr3 rayOutParallel = -1.0f * sqrtf(fabs(1.0f - rayOutPerp.lengthSquared())) * n;
+	return rayOutPerp + rayOutParallel;
 }
