@@ -1,25 +1,28 @@
 #pragma once
 
-#include "ray.hpp"
-#include "helper.hpp"
+#include "ray.cuh"
+#include "helper.cuh"
 
 class Camera {
 public:
+
+  __device__
   Camera(Arr3 lookfrom, Arr3 lookat, Arr3 vup, 
     float vfov, float aspectRatio, float aperture, 
     float focusDist);
-
-  Ray transform(float xScreen, float yScreen);
+	
+  __device__ Ray transform(float xScreen, float yScreen, curandState* randState);
 
   private:
-		Arr3 origin;
-		Arr3 lowerLeftCorner;
-		Arr3 horizontal, vertical;
-		Arr3 u, v, w;
+	Arr3 origin;
+	Arr3 lowerLeftCorner;
+	Arr3 horizontal, vertical;
+	Arr3 u, v, w;
 
-		float lensRadius;
+	float lensRadius;
 };
 
+__device__
 Camera::Camera(
 	Arr3 lookfrom, Arr3 lookat, Arr3 vup, 
   float vfov, float aspectRatio, float aperture, 
@@ -42,8 +45,9 @@ Camera::Camera(
 	this->lensRadius = aperture / 2;
 }
 
-Ray Camera::transform(float xScreen, float yScreen) {
-	Arr3 radius = this->lensRadius * Arr3::randomInUnitDisk();
+__device__
+Ray Camera::transform(float xScreen, float yScreen, curandState* randState) {
+	Arr3 radius = this->lensRadius * Arr3::randomInUnitDisk(randState);
 	Arr3 offset = this->u * radius.x() + this->v * radius.y();
 
 	return Ray(
