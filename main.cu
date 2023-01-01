@@ -1,6 +1,7 @@
 #include "camera.cuh"
 #include "hittable/hittable_list.cuh"
 #include "hittable/shape/sphere.cuh"
+#include "hittable/shape/moving_sphere.cuh"
 #include "material/lambertian.cuh"
 #include "material/metal.cuh"
 #include "material/dielectric.cuh"
@@ -15,7 +16,7 @@
 void check_cuda(cudaError_t result, char const* const func, const char* const file, int const line) {
 	if (result) {
 		std::cerr	<< "CUDA error = " << static_cast<unsigned int>(result) << " (" << cudaGetErrorString(result) << ") at " <<
-					file << ":" << line << " '" << func << "' \n";
+      file << ":" << line << " '" << func << "' \n";
 		// Make sure we call CUDA Device Reset before exiting
 		cudaDeviceReset();
 		exit(99);
@@ -118,20 +119,29 @@ void createWorld(Camera** cam, Hittable** hits, Material** mats, Hittable** worl
 			Arr3 center(a + 0.9f * randomFloat(&localRandState), 0.2f, b + 0.9f * randomFloat(&localRandState));
 
 			if ((center - Arr3(4.0f, 0.2f, 0.0f)).length() > 0.9f) {
-				if (choose_mat < 0.5f) {
+        if (choose_mat < 0.25f) {
+					auto albedo = Arr3::random(&localRandState) * Arr3::random(&localRandState);
+          auto center2 = center + Arr3(0, randomFloat(0, 0.5, randState), 0);
+					mats[objIndex] = new Lambertian(albedo);
+          hits[objIndex] = new MovingSphere(center, 0.0f, center2, 1.0f, 0.2f, mats[objIndex]);
+
+				} else if (choose_mat < 0.5f) {
 					auto albedo = Arr3::random(&localRandState) * Arr3::random(&localRandState);
 					mats[objIndex] = new Lambertian(albedo);
+          hits[objIndex] = new Sphere(center, 0.2f, mats[objIndex]);
 
 				} else if (choose_mat < 0.75f) {
 					auto albedo = Arr3::random(0.5f, 1.0f, &localRandState);
 					auto fuzz = randomFloat(0.0f, 0.5f, &localRandState);
 
 					mats[objIndex] = new Metal(albedo, fuzz);
+          hits[objIndex] = new Sphere(center, 0.2f, mats[objIndex]);
+
 				} else {
 					mats[objIndex] = new Dielectric(1.5f);
+          hits[objIndex] = new Sphere(center, 0.2f, mats[objIndex]);
 				}
 
-				hits[objIndex] = new Sphere(center, 0.2f, mats[objIndex]);
 				objIndex++;
 			}
 		}
@@ -155,7 +165,7 @@ void createWorld(Camera** cam, Hittable** hits, Material** mats, Hittable** worl
 	auto aperture = 0.1f;
 	auto aspect_ratio = 1.0f;
 
-	cam[0] = new Camera(lookfrom, lookat, vup, 20.0f, aspect_ratio, aperture, dist_to_focus);
+	cam[0] = new Camera(lookfrom, lookat, vup, 60.0f, aspect_ratio, aperture, dist_to_focus);
 }
 
 __global__

@@ -31,7 +31,7 @@ bool Dielectric::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *sc
 	}	
 
 	scattered->colorAttenuation = Arr3(1.0f, 1.0f, 1.0f);
-	scattered->newRay = Ray(hit.point, direction);
+	scattered->newRay = Ray(hit.point, direction, ray.time());
 
 	return true;
 }

@@ -9,7 +9,7 @@ public:
   __device__
   Camera(Arr3 lookfrom, Arr3 lookat, Arr3 vup, 
     float vfov, float aspectRatio, float aperture, 
-    float focusDist);
+    float focusDist, float time0 = 0.0f, float time1 = 0.0f);
 	
   __device__ Ray transform(float xScreen, float yScreen, curandState* randState);
 
@@ -20,13 +20,14 @@ public:
 	Arr3 u, v, w;
 
 	float lensRadius;
+  float time0, time1;
 };
 
 __device__
 Camera::Camera(
 	Arr3 lookfrom, Arr3 lookat, Arr3 vup, 
   float vfov, float aspectRatio, float aperture, 
-  float focusDist
+  float focusDist,float time0, float time1
 ) {
 	double theta = degreesToRadians(vfov);
 	double height = tan(theta / 2);
@@ -52,6 +53,7 @@ Ray Camera::transform(float xScreen, float yScreen, curandState* randState) {
 
 	return Ray(
 		this->origin + offset, 
-		this->lowerLeftCorner + xScreen * this->horizontal + yScreen * this->vertical - this->origin - offset
+		this->lowerLeftCorner + xScreen * this->horizontal + yScreen * this->vertical - this->origin - offset,
+    randomFloat(this->time0, this->time1, randState)
 	);
 }

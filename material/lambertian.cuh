@@ -18,7 +18,7 @@ bool Lambertian::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *sc
   if (scatterDirection.nearZero())
     scatterDirection = hit.faceNormal.normal;
 
-	scattered->newRay = Ray(hit.point, scatterDirection);
+	scattered->newRay = Ray(hit.point, scatterDirection, ray.time());
 	scattered->colorAttenuation = this->colorAlbedo;
 
 	return true;
