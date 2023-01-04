@@ -1,16 +1,17 @@
 #pragma once
 
-#include <limits>
+#include <cstdlib>
 #include <curand_kernel.h>
-
-__device__ const float infinity = FLT_MAX;
-__device__ const float pi = 3.141592653589f;
 
 __device__ float randomFloat(curandState *randState);
 __device__ float randomFloat(float min, float max, curandState *randState);
+
+__host__ float randomFloat();
+__host__ float randomFloat(float min, float max);
+
 __host__ __device__ float clamp(float value, float min, float max);
 
-__device__ float degreesToRadians(float degrees);
+__host__ __device__ float degreesToRadians(float degrees);
 __device__ int randInt(int min, int max, curandState *randState);
 
 __device__
@@ -23,6 +24,16 @@ float randomFloat(float min, float max, curandState *randState) {
 	return min + (max - min) * randomFloat(randState);
 }
 
+__host__
+float randomFloat() {
+	return rand() / (RAND_MAX + 1.0f);
+}
+
+__host__
+float randomFloat(float min, float max) {
+	return min + (max - min) * randomFloat();
+}
+
 __host__ __device__
 float clamp(float value, float min, float max) {
 	if (value < min) return min;
@@ -30,9 +41,9 @@ float clamp(float value, float min, float max) {
 	return value;
 }
 
-__device__
+__host__ __device__
 float degreesToRadians(float degrees) {
-	return degrees * pi / 180.0f;
+	return degrees * 3.141592653589f / 180.0f;
 }
 
 __device__

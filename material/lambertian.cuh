@@ -4,7 +4,7 @@
 
 class Lambertian : public Material {
   public:
-    __device__ Lambertian(const Arr3 &colorAlbedo) : colorAlbedo{colorAlbedo} {}
+    __host__ __device__ Lambertian(const Arr3 &colorAlbedo) : colorAlbedo{colorAlbedo} {}
     __device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const override;
 
   private:

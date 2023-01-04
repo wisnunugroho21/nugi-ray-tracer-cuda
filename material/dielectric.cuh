@@ -4,10 +4,10 @@
 
 class Dielectric : public Material {
 	public:
-		__device__ Dielectric(float indexRefraction) : indexRefraction{indexRefraction} {}
+		__host__ __device__ Dielectric(float indexRefraction) : indexRefraction{indexRefraction} {}
 
 		__device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const override;
-		__device__ static float reflactance(float cosine, float refIdx);
+		__host__ __device__ static float reflactance(float cosine, float refIdx);
 
 	private:
 		float indexRefraction;
@@ -36,7 +36,7 @@ bool Dielectric::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *sc
 	return true;
 }
 
-__device__
+__host__ __device__
 float Dielectric::reflactance(float cosine, float refIdx) {
 	auto r0 = (1.0f - refIdx) / (1 + refIdx);
 	r0 = r0 * r0;

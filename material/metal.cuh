@@ -4,7 +4,7 @@
 
 class Metal : public Material {
 	public:
-		__device__ Metal(const Arr3 &colorAlbedo, float fuzziness) : colorAlbedo{colorAlbedo} {
+		__host__ __device__ Metal(const Arr3 &colorAlbedo, float fuzziness) : colorAlbedo{colorAlbedo} {
 			this->fuzziness = (fuzziness < 1.0f) ? fuzziness : 1.0f;
 		}
 

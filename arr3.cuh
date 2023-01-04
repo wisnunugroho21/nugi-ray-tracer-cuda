@@ -22,6 +22,8 @@ class Arr3
 		__host__ __device__ float r() const { return this->e[0]; }
 		__host__ __device__ float g() const { return this->e[1]; }
 		__host__ __device__ float b() const { return this->e[2]; }
+
+    __host__ __device__ float get(int index) const { return this->e[index]; }
 		
 		__host__ __device__ float operator [](int i) const;
 		__host__ __device__ float& operator [](int i);
@@ -52,12 +54,19 @@ class Arr3
 		__device__ static Arr3 randomInUnitDisk(curandState *randState);
 		__device__ static Arr3 randomInUnitSphere(curandState *randState);
 
+    __host__ static Arr3 random();
+		__host__ static Arr3 random(float min, float max);
+		__host__ static Arr3 randomUnitLength();
+		__host__ static Arr3 randomUnitVector();
+		__host__ static Arr3 randomInUnitDisk();
+		__host__ static Arr3 randomInUnitSphere();
+
 		__host__ __device__ static float dot (const Arr3 &u, const Arr3 &v);
 		__host__ __device__ static Arr3 cross (const Arr3 &u, const Arr3 &v);
 		__host__ __device__ static Arr3 reflect(const Arr3& v, const Arr3& n);
 		__host__ __device__ static Arr3 refract(const Arr3& uv, const Arr3& n, float etaiOverEtat);
 
-	public:
+	private:
 		float e[3];
 };
 
@@ -236,6 +245,48 @@ Arr3 Arr3::randomInUnitSphere(curandState *randState) {
 	}
 }
 
+__host__
+Arr3 Arr3::random() {
+	return Arr3(randomFloat(), randomFloat(), randomFloat());
+}
+
+__host__
+Arr3 Arr3::random(float min, float max) {
+	return Arr3(randomFloat(min, max), randomFloat(min, max), randomFloat(min, max));
+}
+
+__host__
+Arr3 Arr3::randomUnitLength() {
+	while (true) {
+		Arr3 p = Arr3::random(-1, 1);
+		if (p.lengthSquared() < 1) {
+			return p;
+		}
+	}
+}
+
+__host__
+Arr3 Arr3::randomUnitVector() {
+	return Arr3::randomUnitLength().unitVector();
+}
+
+__host__
+Arr3 Arr3::randomInUnitDisk() {
+	while (true) {
+		Arr3 p = Arr3(randomFloat(-1, 1), randomFloat(-1, 1), 0);
+		if (p.lengthSquared() < 1) {
+			return p;
+		}
+	}
+}
+
+__host__
+Arr3 Arr3::randomInUnitSphere() {
+	while (true) {
+		auto p = Arr3::random(-1, 1);
+		if (p.lengthSquared() < 1) return p;
+	}
+}
 
 __host__ __device__
 Arr3 operator + (Arr3 u, Arr3 v) {

@@ -6,7 +6,7 @@
 class Camera {
 public:
 
-  __device__
+  __host__ __device__
   Camera(Arr3 lookfrom, Arr3 lookat, Arr3 vup, 
     float vfov, float aspectRatio, float aperture, 
     float focusDist, float time0 = 0.0f, float time1 = 0.0f);
@@ -23,7 +23,7 @@ public:
   float time0, time1;
 };
 
-__device__
+__host__ __device__
 Camera::Camera(
 	Arr3 lookfrom, Arr3 lookat, Arr3 vup, 
   float vfov, float aspectRatio, float aperture, 

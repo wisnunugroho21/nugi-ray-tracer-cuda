@@ -19,7 +19,7 @@ class Ray {
 		float tm;
 };
 
-__device__
+__host__ __device__
 Arr3 Ray::at(float t) const {
 	return this->org + t * this->dir;
 }

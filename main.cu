@@ -2,6 +2,7 @@
 #include "hittable/hittable_list.cuh"
 #include "hittable/shape/sphere.cuh"
 #include "hittable/shape/moving_sphere.cuh"
+#include "hittable/bvh.cuh"
 #include "material/lambertian.cuh"
 #include "material/metal.cuh"
 #include "material/dielectric.cuh"
@@ -119,13 +120,7 @@ void createWorld(Camera** cam, Hittable** hits, Material** mats, Hittable** worl
 			Arr3 center(a + 0.9f * randomFloat(&localRandState), 0.2f, b + 0.9f * randomFloat(&localRandState));
 
 			if ((center - Arr3(4.0f, 0.2f, 0.0f)).length() > 0.9f) {
-        if (choose_mat < 0.25f) {
-					auto albedo = Arr3::random(&localRandState) * Arr3::random(&localRandState);
-          auto center2 = center + Arr3(0, randomFloat(0, 0.5, randState), 0);
-					mats[objIndex] = new Lambertian(albedo);
-          hits[objIndex] = new MovingSphere(center, 0.0f, center2, 1.0f, 0.2f, mats[objIndex]);
-
-				} else if (choose_mat < 0.5f) {
+        if (choose_mat < 0.3f) {
 					auto albedo = Arr3::random(&localRandState) * Arr3::random(&localRandState);
 					mats[objIndex] = new Lambertian(albedo);
           hits[objIndex] = new Sphere(center, 0.2f, mats[objIndex]);
@@ -156,7 +151,7 @@ void createWorld(Camera** cam, Hittable** hits, Material** mats, Hittable** worl
 	mats[objIndex + 2] = new Metal(Arr3(0.7f, 0.6f, 0.5f), 0.1f);
 	hits[objIndex + 2] = new Sphere(Arr3(4.0f, 1.0f, 0.0f), 1.0f, mats[objIndex + 2]);
 
-	world[0] = new HittableList(hits, objIndex + 3);
+	world[0] = BvhNode::constructBvh(hits, objIndex + 3, 0.0f, 0.0f);
 
 	Arr3 lookfrom(13.0f, 2.0f, 3.0f);
 	Arr3 lookat(0.0f, 0.0f, 0.0f);
