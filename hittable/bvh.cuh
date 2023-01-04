@@ -14,8 +14,8 @@ class BvhNode :public Hittable {
     __host__ __device__ virtual float getNumCompare(int index) const override;
     __host__ __device__ virtual bool buildBoundingBox(BoundingRecord *box) override;
 
-    __host__ __device__ static BvhNode* constructBvh(Hittable **objects, int n, float time0, float time1);
-    __host__ __device__ void sortDivide();
+    __device__ static BvhNode* constructBvh(Hittable **objects, int n, float time0, float time1, curandState* randState);
+    __device__ void sortDivide(curandState* randState);
 
     __host__ __device__
     Hittable** getList() {
@@ -84,9 +84,13 @@ bool BvhNode::buildBoundingBox(BoundingRecord *box) {
   return true;
 }
 
-__host__ __device__
-void BvhNode::sortDivide() {
-  auto comparator = BvhNode::boxCompareX;
+__device__
+void BvhNode::sortDivide(curandState* randState) {
+  int axis = randInt(0, 2, randState);
+
+  auto comparator = (axis == 0) ? boxCompareX
+                  : (axis == 1) ? boxCompareY
+                  : boxCompareZ;
 
   if (this->nObjects == 1) {
     this->leftObject = this->rightObject = this->objects[0];
@@ -155,10 +159,10 @@ bool isNotLeaf(BvhNode **objects, int nObject) {
   return false;
 }
 
-__host__ __device__
-BvhNode* BvhNode::constructBvh(Hittable **objects, int n, float time0, float time1) {
+__device__
+BvhNode* BvhNode::constructBvh(Hittable **objects, int n, float time0, float time1, curandState* randState) {
   BvhNode *root = new BvhNode(objects, n, time0, time1);
-  root->sortDivide();
+  root->sortDivide(randState);
 
   BvhNode **leafNodes = (BvhNode**) malloc(n * sizeof(BvhNode*));
   int nLeaf = 0;
@@ -190,7 +194,7 @@ BvhNode* BvhNode::constructBvh(Hittable **objects, int n, float time0, float tim
     }
 
     for (int i = 0; i < nLeaf; i++) {
-      leafNodes[i]->sortDivide();
+      leafNodes[i]->sortDivide(randState);
     }
     
     free(curNodes);

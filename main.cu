@@ -151,7 +151,7 @@ void createWorld(Camera** cam, Hittable** hits, Material** mats, Hittable** worl
 	mats[objIndex + 2] = new Metal(Arr3(0.7f, 0.6f, 0.5f), 0.1f);
 	hits[objIndex + 2] = new Sphere(Arr3(4.0f, 1.0f, 0.0f), 1.0f, mats[objIndex + 2]);
 
-	world[0] = BvhNode::constructBvh(hits, objIndex + 3, 0.0f, 0.0f);
+	world[0] = BvhNode::constructBvh(hits, objIndex + 3, 0.0f, 0.0f, &localRandState);
 
 	Arr3 lookfrom(13.0f, 2.0f, 3.0f);
 	Arr3 lookat(0.0f, 0.0f, 0.0f);
