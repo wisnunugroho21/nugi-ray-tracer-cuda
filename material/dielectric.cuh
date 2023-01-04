@@ -1,6 +1,6 @@
 #pragma once
 
-#include "material/material.cuh"
+#include "material.cuh"
 
 class Dielectric : public Material {
 	public:

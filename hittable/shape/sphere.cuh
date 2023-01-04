@@ -11,6 +11,8 @@ class Sphere : public Hittable {
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
+    __host__ __device__ static TextureCoordinate getUV(const Arr3 &point);
+
   private:
     Arr3 center;
     float radius;
@@ -40,11 +42,14 @@ bool Sphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialR
 
 	hit->t = root;
 	hit->point = r.at(root);
+  
 
 	Arr3 outwardNormal = (hit->point - this->center) / this->radius;
 	hit->faceNormal = FaceNormal(r, outwardNormal);
 
+  hit->textCoord = Sphere::getUV(outwardNormal);
 	mat->material = this->material;
+
 	return true;
 }
 
@@ -61,4 +66,18 @@ bool Sphere::boundingBox(BoundingRecord *box) {
 __host__ __device__ 
 float Sphere::numCompare(int index) const {
   return (this->center - Arr3(this->radius, this->radius, this->radius)).get(index);
+}
+
+__host__ __device__ 
+TextureCoordinate Sphere::getUV(const Arr3 &point) {
+  float pi = 3.1415926535897932385f;
+
+  auto theta = acosf(-1.0f * point.y());
+  auto phi = atan2f(-1.0f * point.z(), point.x()) + pi;
+
+  TextureCoordinate textCoord;
+  textCoord.u = phi / (2 * pi);
+  textCoord.v = theta / pi;
+
+  return textCoord;
 }

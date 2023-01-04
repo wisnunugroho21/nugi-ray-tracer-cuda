@@ -1,7 +1,7 @@
 #pragma once
 
 #include "hittable_list.cuh"
-#include "sort.cuh"
+#include "../sort.cuh"
 
 #include <iostream>
 

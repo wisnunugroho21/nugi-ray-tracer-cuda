@@ -16,8 +16,15 @@ FaceNormal::FaceNormal(const Ray &comingRay, const Arr3 &outwardNormal) {
   this->normal = this->frontFace ? outwardNormal : -outwardNormal;
 }
 
+struct TextureCoordinate {
+  float u;
+  float v;
+};
+
+
 struct HitRecord {
 	FaceNormal faceNormal;
+  TextureCoordinate textCoord;
 	Arr3 point;
 	float t;
 };
