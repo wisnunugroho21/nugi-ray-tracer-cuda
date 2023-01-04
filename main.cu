@@ -6,6 +6,7 @@
 #include "material/lambertian.cuh"
 #include "material/metal.cuh"
 #include "material/dielectric.cuh"
+#include "texture/checker.cuh"
 
 #include <iostream>
 #include <fstream>
@@ -63,7 +64,7 @@ Arr3 tracing(const Ray& r, Hittable** world, curandState* randState) {
 }
 
 __global__
-void render(Arr3* frameBuffer, int width, int height, int nSample, Camera** cam, Hittable** world, curandState* randState) {
+void render(Arr3 *frameBuffer, int width, int height, int nSample, Camera **cam, Hittable **world, curandState *randState) {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 	int j = threadIdx.y + blockIdx.y * blockDim.y;
 	int k = threadIdx.z + blockIdx.z * blockDim.z;
@@ -84,7 +85,7 @@ void render(Arr3* frameBuffer, int width, int height, int nSample, Camera** cam,
 }
 
 __global__
-void sampling(Arr3* frameBuffers, Arr3* finalImageBuffers, int width, int height, int nSample) {
+void sampling(Arr3 *frameBuffers, Arr3 *finalImageBuffers, int width, int height, int nSample) {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 	int j = threadIdx.y + blockIdx.y * blockDim.y;
 
@@ -106,10 +107,39 @@ void sampling(Arr3* frameBuffers, Arr3* finalImageBuffers, int width, int height
 }
 
 __global__
-void createWorld(Camera** cam, Hittable** hits, Material** mats, Hittable** world, curandState* randState) {
-	auto localRandState = randState[0];
+void freeWorld(Camera **cam, Hittable **hits, Material **mats, Hittable **world, int numObjects) {
+	delete cam[0];
+	delete world[0];
 
-	mats[0] = new Lambertian(Arr3(0.5f, 0.5f, 0.5f));
+	for (int i = 0; i < numObjects; i++) {
+		delete hits[i];
+		delete mats[i];
+	}
+}
+
+__global__
+void initPixelRand(int max_x, int max_y, int max_z, curandState* rand_state) {
+	int i = threadIdx.x + blockIdx.x * blockDim.x;
+	int j = threadIdx.y + blockIdx.y * blockDim.y;
+	int k = threadIdx.z + blockIdx.z * blockDim.z;
+
+	if (i >= max_x || j >= max_y || k >= max_z) return;
+	int pixel_index = k + i * max_z + j * max_x * max_z;
+
+	curand_init(1984 + pixel_index, 0, 0, &rand_state[pixel_index]);
+}
+
+__global__
+void initGlobalRand(curandState* rand_state) {
+	curand_init(1983, 0, 0, &rand_state[0]);
+}
+
+__global__
+void randomScenes(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState) {
+	auto localRandState = randState[0];
+  
+  texts[0] = new Checker(Arr3(0.2f, 0.3f, 0.1f), Arr3(0.9f, 0.9f, 0.9f));
+	mats[0] = new Lambertian(texts[0]);
 	hits[0] = new Sphere(Arr3(0.0f, -1000.0f, 0.0f), 1000.0f, mats[0]);
 
 	int objIndex = 1;
@@ -160,40 +190,34 @@ void createWorld(Camera** cam, Hittable** hits, Material** mats, Hittable** worl
 	auto aperture = 0.1f;
 	auto aspect_ratio = 1.0f;
 
-	cam[0] = new Camera(lookfrom, lookat, vup, 60.0f, aspect_ratio, aperture, dist_to_focus);
+	cam[0] = new Camera(lookfrom, lookat, vup, 40.0f, aspect_ratio, aperture, dist_to_focus);
 }
 
 __global__
-void freeWorld(Camera** cam, Hittable** hits, Material** mats, Hittable** world) {
-	delete cam[0];
-	delete world[0];
+void twoSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState) {
+  auto localRandState = randState[0];
 
-	int numObjects = 22 * 22 + 3 + 1;
+  texts[0] = new Checker(Arr3(0.2f, 0.3f, 0.1f), Arr3(0.9f, 0.9f, 0.9f));
+  mats[0] = new Lambertian(texts[0]);
 
-	for (int i = 0; i < numObjects; i++) {
-		delete hits[i];
-		delete mats[i];
-	}
-}
+  hits[0] = new Sphere(Arr3(0.0f, -10.0f, 0.0f), 10.0f, mats[0]);
+  hits[1] = new Sphere(Arr3(0.0f, 10.0f, 0.0f), 10.0f, mats[0]);
 
-__global__
-void initPixelRand(int max_x, int max_y, int max_z, curandState* rand_state) {
-	int i = threadIdx.x + blockIdx.x * blockDim.x;
-	int j = threadIdx.y + blockIdx.y * blockDim.y;
-	int k = threadIdx.z + blockIdx.z * blockDim.z;
+  world[0] = BvhNode::build(hits, 2, 0.0f, 0.0f, &localRandState);
 
-	if (i >= max_x || j >= max_y || k >= max_z) return;
-	int pixel_index = k + i * max_z + j * max_x * max_z;
+  Arr3 lookfrom(13.0f, 2.0f, 3.0f);
+	Arr3 lookat(0.0f, 0.0f, 0.0f);
+	Arr3 vup(0.0f, 1.0f, 0.0f);
+	auto dist_to_focus = 10.0f;
+	auto aperture = 0.1f;
+	auto aspect_ratio = 1.0f;
 
-	curand_init(1984 + pixel_index, 0, 0, &rand_state[pixel_index]);
-}
-
-__global__
-void initGlobalRand(curandState* rand_state) {
-	curand_init(1983, 0, 0, &rand_state[0]);
+	cam[0] = new Camera(lookfrom, lookat, vup, 40.0f, aspect_ratio, aperture, dist_to_focus);
 }
 
 int main() {
+  int scene = 2;
+
 	const int imageWidth = 1024;
 	const int imageHeight = 1024;
 	const int samplePerPixel = 32;
@@ -201,8 +225,6 @@ int main() {
 	int tx = 8;
 	int ty = 8;
 	int tz = 8;
-
-	int numObjects = 22 * 22 + 3 + 1;
 
 	Arr3* frameBuffers;
 	Arr3* finalImageBuffers;
@@ -218,21 +240,44 @@ int main() {
 	Hittable** hits;
 	Material** mats;
 	Hittable** world;
+  Texture** texts;
 
 	checkCudaErrors(cudaMallocManaged((void**)&frameBuffers, fb_size));
 	checkCudaErrors(cudaMallocManaged((void**)&finalImageBuffers, finalImage_size));
 	checkCudaErrors(cudaMalloc((void**)&pixelRandState, pixel_rand_size));
 	checkCudaErrors(cudaMalloc((void**)&globalRandState, sizeof(curandState)));
+
+  int numObjects = 0;
+
+  switch (scene){
+    case 1:
+      numObjects = 22 * 22 + 3 + 1; break;
+  
+    case 2:
+      numObjects = 2; break;
+  }
+
+
 	checkCudaErrors(cudaMalloc((void**)&camera, sizeof(Camera*)));
 	checkCudaErrors(cudaMalloc((void**)&hits, numObjects * sizeof(Hittable*)));
 	checkCudaErrors(cudaMalloc((void**)&mats, numObjects * sizeof(Material*)));
 	checkCudaErrors(cudaMalloc((void**)&world, sizeof(Hittable*)));
+  checkCudaErrors(cudaMalloc((void**)&texts, 1 * sizeof(Texture*)));
 
 	initGlobalRand<<<1, 1>>>(globalRandState);
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
-	createWorld<<<1, 1>>>(camera, hits, mats, world, globalRandState);
+  switch (scene) {
+    case 1:
+      randomScenes<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState);
+      break;
+    
+    case 2:
+      twoSpheres<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState);
+      break;
+  }
+	
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
@@ -271,7 +316,7 @@ int main() {
 	}
 
 	checkCudaErrors(cudaDeviceSynchronize());
-	freeWorld<<<1, 1>>>(camera, hits, mats, world);
+	freeWorld<<<1, 1>>>(camera, hits, mats, world, numObjects);
 	checkCudaErrors(cudaGetLastError());
 
 	checkCudaErrors(cudaFree(camera));
