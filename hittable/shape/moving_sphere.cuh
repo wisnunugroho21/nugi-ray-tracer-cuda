@@ -11,8 +11,8 @@ class MovingSphere : public Hittable {
     {}
 
     __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const override;
-    __host__ __device__ virtual float getNumCompare(int index) const override;
-    __host__ __device__ virtual bool buildBoundingBox(BoundingRecord *box) override;
+    __host__ __device__ virtual float numCompare(int index) const override;
+    __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
     __host__ __device__ Arr3 center(float time) const;
 
@@ -55,7 +55,7 @@ bool MovingSphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Mat
 }
 
 __host__ __device__
-bool MovingSphere::buildBoundingBox(BoundingRecord *box) {
+bool MovingSphere::boundingBox(BoundingRecord *box) {
   AABB box0(
     this->center(this->time0) - Arr3(this->radius, this->radius, this->radius),
     this->center(this->time0) + Arr3(this->radius, this->radius, this->radius)
@@ -71,7 +71,7 @@ bool MovingSphere::buildBoundingBox(BoundingRecord *box) {
 }
 
 __host__ __device__ 
-float MovingSphere::getNumCompare(int index) const {
+float MovingSphere::numCompare(int index) const {
   Arr3 min0 = this->center(this->time0) - Arr3(this->radius, this->radius, this->radius);
   Arr3 min1 = this->center(this->time1) - Arr3(this->radius, this->radius, this->radius);
 

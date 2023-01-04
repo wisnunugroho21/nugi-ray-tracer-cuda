@@ -5,16 +5,36 @@
 
 #include <iostream>
 
+__host__ __device__
+bool boxCompare(Hittable *prevObject, Hittable *nextObject, int axis) {
+  return prevObject->numCompare(axis) < nextObject->numCompare(axis);
+}
+
+__host__ __device__
+bool boxCompareX(Hittable *prevObject, Hittable *nextObject) {
+  return boxCompare(prevObject, nextObject, 0);
+}
+
+__host__ __device__
+bool boxCompareY(Hittable *prevObject, Hittable *nextObject) {
+  return boxCompare(prevObject, nextObject, 1);
+}
+
+__host__ __device__
+bool boxCompareZ(Hittable *prevObject, Hittable *nextObject) {
+  return boxCompare(prevObject, nextObject, 2);
+}
+
 class BvhNode :public Hittable {
   public:
     __host__ __device__ BvhNode() {}
     __host__ __device__ BvhNode(Hittable **objects, int n, float time0, float time1) : objects{objects}, nObjects{n}, time0{time0}, time1{time1} {}
 
     __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *rec, MaterialRecord *mat) const override;
-    __host__ __device__ virtual float getNumCompare(int index) const override;
-    __host__ __device__ virtual bool buildBoundingBox(BoundingRecord *box) override;
+    __host__ __device__ virtual float numCompare(int index) const override;
+    __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
-    __device__ static BvhNode* constructBvh(Hittable **objects, int n, float time0, float time1, curandState* randState);
+    __device__ static BvhNode* build(Hittable **objects, int n, float time0, float time1, curandState* randState);
     __device__ void sortDivide(curandState* randState);
 
     __host__ __device__
@@ -43,12 +63,6 @@ class BvhNode :public Hittable {
       AABB nodeBox;
 
       float time0, time1;
-
-    __host__ __device__ static bool boxCompare(Hittable *prevObject, Hittable *nextObject, int axis);
-
-    __host__ __device__ static bool boxCompareX(Hittable *prevObject, Hittable *nextObject);
-    __host__ __device__ static bool boxCompareY(Hittable *prevObject, Hittable *nextObject);
-    __host__ __device__ static bool boxCompareZ(Hittable *prevObject, Hittable *nextObject);
 };
 
 __host__ __device__ 
@@ -64,16 +78,16 @@ bool BvhNode::hit(const Ray &r, float tMin, float tMax, HitRecord *rec, Material
 }
 
 __host__ __device__ 
-float BvhNode::getNumCompare(int index) const {
+float BvhNode::numCompare(int index) const {
   return 0.0f;
 }
 
 __host__ __device__
-bool BvhNode::buildBoundingBox(BoundingRecord *box) {
+bool BvhNode::boundingBox(BoundingRecord *box) {
   BoundingRecord boxLeft, boxRight;
 
-  this->leftObject->buildBoundingBox(&boxLeft);
-  this->rightObject->buildBoundingBox(&boxRight);
+  this->leftObject->boundingBox(&boxLeft);
+  this->rightObject->boundingBox(&boxRight);
 
   this->nodeBox = AABB::surrondingBox(boxLeft.boundingBox, boxRight.boundingBox);
 
@@ -131,26 +145,6 @@ void BvhNode::sortDivide(curandState* randState) {
 }
 
 __host__ __device__
-bool BvhNode::boxCompare(Hittable *prevObject, Hittable *nextObject, int axis) {
-  return prevObject->getNumCompare(axis) < nextObject->getNumCompare(axis);
-}
-
-__host__ __device__
-bool BvhNode::boxCompareX(Hittable *prevObject, Hittable *nextObject) {
-  return BvhNode::boxCompare(prevObject, nextObject, 0);
-}
-
-__host__ __device__
-bool BvhNode::boxCompareY(Hittable *prevObject, Hittable *nextObject) {
-  return BvhNode::boxCompare(prevObject, nextObject, 1);
-}
-
-__host__ __device__
-bool BvhNode::boxCompareZ(Hittable *prevObject, Hittable *nextObject) {
-  return BvhNode::boxCompare(prevObject, nextObject, 2);
-}
-
-__host__ __device__
 bool isNotLeaf(BvhNode **objects, int nObject) {
   for (int i = 0; i < nObject; i++) {
     if (objects[i]->getNumList() > 2) return true;
@@ -160,7 +154,7 @@ bool isNotLeaf(BvhNode **objects, int nObject) {
 }
 
 __device__
-BvhNode* BvhNode::constructBvh(Hittable **objects, int n, float time0, float time1, curandState* randState) {
+BvhNode* BvhNode::build(Hittable **objects, int n, float time0, float time1, curandState* randState) {
   BvhNode *root = new BvhNode(objects, n, time0, time1);
   root->sortDivide(randState);
 
@@ -200,6 +194,6 @@ BvhNode* BvhNode::constructBvh(Hittable **objects, int n, float time0, float tim
     free(curNodes);
   }
 
-  root->buildBoundingBox(nullptr);
+  root->boundingBox(nullptr);
   return root;
 }

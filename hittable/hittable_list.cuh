@@ -8,8 +8,8 @@ class HittableList : public Hittable {
     __host__ __device__ HittableList(Hittable **objects, int n) : objects{objects}, n{n} {}
 
     __host__ __device__ virtual bool hit(const Ray &r, float t_min, float t_max, HitRecord *rec, MaterialRecord *mat) const override;
-    __host__ __device__ virtual float getNumCompare(int index) const override;
-    __host__ __device__ virtual bool buildBoundingBox(BoundingRecord *outputBox) override;
+    __host__ __device__ virtual float numCompare(int index) const override;
+    __host__ __device__ virtual bool boundingBox(BoundingRecord *outputBox) override;
 
   private:
     Hittable **objects;
@@ -41,14 +41,14 @@ bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *rec, Mat
 }
 
 __host__ __device__ 
-bool HittableList::buildBoundingBox(BoundingRecord *outputBox) {
+bool HittableList::boundingBox(BoundingRecord *outputBox) {
   if (this->objects == NULL || this->n == 0) return false;
 
   bool firstBox = true;
   BoundingRecord tempBox;
 
   for (int i = 0; i < this->n; i++) {
-    if (this->objects[n]->buildBoundingBox(&tempBox)) {
+    if (this->objects[n]->boundingBox(&tempBox)) {
       outputBox->boundingBox = firstBox ? tempBox.boundingBox : AABB::surrondingBox(outputBox->boundingBox, tempBox.boundingBox);
       firstBox = false;
     }
@@ -58,14 +58,14 @@ bool HittableList::buildBoundingBox(BoundingRecord *outputBox) {
 }
 
 __host__ __device__ 
-float HittableList::getNumCompare(int index) const {
+float HittableList::numCompare(int index) const {
   if (this->objects == NULL || this->n == 0) return -99;
 
   float minNum = 99;
 
   for (int i = 0; i < this->n; i++) {
-    if (this->objects[i]->getNumCompare(index) < minNum) {
-      minNum = this->objects[i]->getNumCompare(index);
+    if (this->objects[i]->numCompare(index) < minNum) {
+      minNum = this->objects[i]->numCompare(index);
     }
   }
 

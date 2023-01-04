@@ -8,8 +8,8 @@ class Sphere : public Hittable {
     __host__ __device__ Sphere(Arr3 center, float radius, Material *material) : center{center}, radius{radius}, material{material} {}
 
     __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const override;
-    __host__ __device__ virtual float getNumCompare(int index) const override;
-    __host__ __device__ virtual bool buildBoundingBox(BoundingRecord *box) override;
+    __host__ __device__ virtual float numCompare(int index) const override;
+    __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
   private:
     Arr3 center;
@@ -49,7 +49,7 @@ bool Sphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialR
 }
 
 __host__ __device__
-bool Sphere::buildBoundingBox(BoundingRecord *box) {
+bool Sphere::boundingBox(BoundingRecord *box) {
   box->boundingBox = AABB(
     this->center - Arr3(this->radius, this->radius, this->radius),
     this->center + Arr3(this->radius, this->radius, this->radius)
@@ -59,6 +59,6 @@ bool Sphere::buildBoundingBox(BoundingRecord *box) {
 }
 
 __host__ __device__ 
-float Sphere::getNumCompare(int index) const {
+float Sphere::numCompare(int index) const {
   return (this->center - Arr3(this->radius, this->radius, this->radius)).get(index);
 }
