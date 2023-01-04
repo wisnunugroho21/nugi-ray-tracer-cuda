@@ -48,15 +48,15 @@ bool AABB::hit(const Ray &ray, float tMin, float tMax) const {
 __host__ __device__
 AABB AABB::surrondingBox(AABB box0, AABB box1) {
   Arr3 minPoint(
-    fmin(box0.minimum().x(), box1.minimum().x()), 
-    fmin(box0.minimum().y(), box1.minimum().y()),
-    fmin(box0.minimum().z(), box1.minimum().z())
+    fminf(box0.minimum().x(), box1.minimum().x()), 
+    fminf(box0.minimum().y(), box1.minimum().y()),
+    fminf(box0.minimum().z(), box1.minimum().z())
   );
 
   Arr3 maxPoint(
-    fmax(box0.maximum().x(), box1.maximum().x()), 
-    fmax(box0.maximum().y(), box1.maximum().y()),
-    fmax(box0.maximum().z(), box1.maximum().z())
+    fmaxf(box0.maximum().x(), box1.maximum().x()), 
+    fmaxf(box0.maximum().y(), box1.maximum().y()),
+    fmaxf(box0.maximum().z(), box1.maximum().z())
   );
 
   return AABB(minPoint, maxPoint);

@@ -7,6 +7,7 @@
 #include "material/metal.cuh"
 #include "material/dielectric.cuh"
 #include "texture/checker.cuh"
+#include "texture/noise.cuh"
 
 #include <iostream>
 #include <fstream>
@@ -215,8 +216,30 @@ void twoSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable **world
 	cam[0] = new Camera(lookfrom, lookat, vup, 40.0f, aspect_ratio, aperture, dist_to_focus);
 }
 
+__global__
+void twoPerlinSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState) {
+  auto localRandState = randState[0];
+
+  texts[0] = new Noise(&localRandState, 4.0f);
+  mats[0] = new Lambertian(texts[0]);
+
+  hits[0] = new Sphere(Arr3(0.0f, -1000.0f, 0.0f), 1000.0f, mats[0]);
+  hits[1] = new Sphere(Arr3(0.0f, 2.0f, 0.0f), 2.0f, mats[0]);
+
+  world[0] = BvhNode::build(hits, 2, &localRandState);
+
+  Arr3 lookfrom(13.0f, 2.0f, 3.0f);
+	Arr3 lookat(0.0f, 0.0f, 0.0f);
+	Arr3 vup(0.0f, 1.0f, 0.0f);
+	auto dist_to_focus = 10.0f;
+	auto aperture = 0.1f;
+	auto aspect_ratio = 1.0f;
+
+	cam[0] = new Camera(lookfrom, lookat, vup, 40.0f, aspect_ratio, aperture, dist_to_focus);
+}
+
 int main() {
-  int scene = 2;
+  int scene = 3;
 
 	const int imageWidth = 1024;
 	const int imageHeight = 1024;
@@ -255,6 +278,9 @@ int main() {
   
     case 2:
       numObjects = 2; break;
+
+    case 3:
+      numObjects = 2; break;
   }
 
 
@@ -275,6 +301,10 @@ int main() {
     
     case 2:
       twoSpheres<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState);
+      break;
+
+    case 3:
+      twoPerlinSpheres<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState);
       break;
   }
 	
