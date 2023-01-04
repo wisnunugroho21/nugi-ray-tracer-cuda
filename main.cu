@@ -40,7 +40,7 @@ Arr3 tracing(const Ray& r, Hittable** world, curandState* randState) {
 	ScatterRecord scat;
 	MaterialRecord mat;
 
-	for (size_t i = 0; i < 50; i++) {
+	for (int i = 0; i < 50; i++) {
 		if (world[0]->hit(curRay, 0.001f, FLT_MAX, &hit, &mat)) {
 			if (mat.material->scatter(curRay, hit, &scat, randState)) {
 				curAttenuation *= scat.colorAttenuation;
@@ -194,8 +194,8 @@ void initGlobalRand(curandState* rand_state) {
 }
 
 int main() {
-	const int imageWidth = 1200;
-	const int imageHeight = 1200;
+	const int imageWidth = 1024;
+	const int imageHeight = 1024;
 	const int samplePerPixel = 32;
 
 	int tx = 8;
@@ -280,6 +280,7 @@ int main() {
 	checkCudaErrors(cudaFree(hits));
 	checkCudaErrors(cudaFree(pixelRandState));
 	checkCudaErrors(cudaFree(globalRandState));
+  checkCudaErrors(cudaFree(finalImageBuffers));
 	checkCudaErrors(cudaFree(frameBuffers));
 
 	cudaDeviceReset();

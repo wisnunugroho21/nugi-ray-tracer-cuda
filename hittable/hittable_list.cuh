@@ -24,7 +24,7 @@ bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *rec, Mat
   bool isHitAnything = false;
   float tClosest = tMax;
 
-  for (size_t i = 0; i < this->n; i++) {
+  for (int i = 0; i < this->n; i++) {
     if (this->objects[i]->hit(r, tMin, tClosest, &tempRec, &tempMat)) {
       isHitAnything = true;
       tClosest = tempRec.t;

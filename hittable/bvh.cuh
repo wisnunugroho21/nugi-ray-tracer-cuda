@@ -164,7 +164,7 @@ BvhNode* BvhNode::build(Hittable **objects, int n, float time0, float time1, cur
   leafNodes[nLeaf++] = root;
 
   while (isNotLeaf(leafNodes, nLeaf)) {
-    BvhNode **curNodes =  (BvhNode**) malloc(n * sizeof(BvhNode*));
+    BvhNode **curNodes =  (BvhNode**) malloc(nLeaf * sizeof(BvhNode*));
     int nCurNodes = 0;
 
     for (int i = 0; i < nLeaf; i++) {
@@ -193,6 +193,8 @@ BvhNode* BvhNode::build(Hittable **objects, int n, float time0, float time1, cur
     
     free(curNodes);
   }
+
+  free(leafNodes);
 
   root->boundingBox(nullptr);
   return root;
