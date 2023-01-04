@@ -28,13 +28,13 @@ bool boxCompareZ(Hittable *prevObject, Hittable *nextObject) {
 class BvhNode :public Hittable {
   public:
     __host__ __device__ BvhNode() {}
-    __host__ __device__ BvhNode(Hittable **objects, int n, float time0, float time1) : objects{objects}, nObjects{n}, time0{time0}, time1{time1} {}
+    __host__ __device__ BvhNode(Hittable **objects, int n) : objects{objects}, nObjects{n} {}
 
     __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *rec, MaterialRecord *mat) const override;
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
-    __device__ static BvhNode* build(Hittable **objects, int n, float time0, float time1, curandState* randState);
+    __device__ static BvhNode* build(Hittable **objects, int n, curandState* randState);
     __device__ void sortDivide(curandState* randState);
 
     __host__ __device__
@@ -61,8 +61,6 @@ class BvhNode :public Hittable {
       Hittable **objects; int nObjects;
       Hittable *leftObject, *rightObject;
       AABB nodeBox;
-
-      float time0, time1;
 };
 
 __host__ __device__ 
@@ -139,8 +137,8 @@ void BvhNode::sortDivide(curandState* randState) {
       rightObjects[nRight++] = this->objects[i];
     }
 
-    this->leftObject = new BvhNode(leftObjects, nLeft, time0, time1);
-    this->rightObject = new BvhNode(rightObjects, nRight, time0, time1); 
+    this->leftObject = new BvhNode(leftObjects, nLeft);
+    this->rightObject = new BvhNode(rightObjects, nRight); 
   }
 }
 
@@ -154,8 +152,8 @@ bool isNotLeaf(BvhNode **objects, int nObject) {
 }
 
 __device__
-BvhNode* BvhNode::build(Hittable **objects, int n, float time0, float time1, curandState* randState) {
-  BvhNode *root = new BvhNode(objects, n, time0, time1);
+BvhNode* BvhNode::build(Hittable **objects, int n, curandState* randState) {
+  BvhNode *root = new BvhNode(objects, n);
   root->sortDivide(randState);
 
   BvhNode **leafNodes = (BvhNode**) malloc(n * sizeof(BvhNode*));
