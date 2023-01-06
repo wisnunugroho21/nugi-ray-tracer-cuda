@@ -1,9 +1,7 @@
 #pragma once
 
 #include "hittable_list.cuh"
-#include "../sort.cuh"
-
-#include <iostream>
+#include "sort.cuh"
 
 __host__ __device__
 bool boxCompare(Hittable *prevObject, Hittable *nextObject, int axis) {

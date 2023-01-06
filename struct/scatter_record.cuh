@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../ray.cuh"
+#include "ray.cuh"
 
 struct ScatterRecord {
 	Arr3 colorAttenuation;

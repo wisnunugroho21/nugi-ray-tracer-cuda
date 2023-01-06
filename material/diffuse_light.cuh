@@ -1,7 +1,7 @@
 #pragma once
 
 #include "material.cuh"
-#include "../texture/texture.cuh"
+#include "texture/texture.cuh"
 
 class DiffuseLight : public Material {
   public:

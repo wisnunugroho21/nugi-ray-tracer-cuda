@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../struct/hit_record.cuh"
-#include "../struct/material_record.cuh"
-#include "../material/material.cuh"
-#include "../struct/bounding_record.cuh"
+#include "struct/hit_record.cuh"
+#include "struct/material_record.cuh"
+#include "material/material.cuh"
+#include "struct/bounding_record.cuh"
 
 class Hittable {
   public:

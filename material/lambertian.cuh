@@ -1,7 +1,7 @@
 #pragma once
 
 #include "material.cuh"
-#include "../texture/solid.cuh"
+#include "texture/solid.cuh"
 
 class Lambertian : public Material {
   public:

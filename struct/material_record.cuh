@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../material/material.cuh"
+#include "material/material.cuh"
 
 struct MaterialRecord {
 	Material* material;

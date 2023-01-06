@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../struct/hit_record.cuh"
-#include "../struct/scatter_record.cuh"
+#include "struct/hit_record.cuh"
+#include "struct/scatter_record.cuh"
 
 class Material {
   public:

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../aabb.cuh"
+#include "aabb.cuh"
 
 struct BoundingRecord {
   AABB boundingBox;

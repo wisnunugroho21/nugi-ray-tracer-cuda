@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../hittable.cuh"
-#include "../../material/material.cuh"
+#include "hittable/hittable.cuh"
+#include "material/material.cuh"
 
 class MovingSphere : public Hittable {
   public:
