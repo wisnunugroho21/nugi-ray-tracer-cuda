@@ -8,6 +8,8 @@
 #include "material/dielectric.cuh"
 #include "texture/checker.cuh"
 #include "texture/noise.cuh"
+#include "mat4.cuh"
+#include "arr4.cuh"
 
 #include <iostream>
 #include <fstream>
@@ -34,38 +36,58 @@ void writeColor(std::ofstream& ofl, Arr3& frameBuffer, int samplePerPixel = 1) {
 }
 
 __device__
-Arr3 tracing(const Ray& r, Hittable** world, curandState* randState) {
-	Arr3 curAttenuation = Arr3(1.0f, 1.0f, 1.0f);
+Arr3 tracing(const Ray &r, Hittable** world, const Arr3 &background, curandState* randState) {
 	Ray curRay = r;
 
 	HitRecord hit;
 	ScatterRecord scat;
 	MaterialRecord mat;
 
-	for (int i = 0; i < 50; i++) {
-		if (world[0]->hit(curRay, 0.001f, FLT_MAX, &hit, &mat)) {
-			if (mat.material->scatter(curRay, hit, &scat, randState)) {
-				curAttenuation *= scat.colorAttenuation;
-				curRay = scat.newRay;
-			}
-			else {
-				return Arr3(0.0f, 0.0f, 0.0f);
-			}
-		}
-		else {
-			auto unitDirection = r.direction().unitVector();
-			auto t = 0.5f * (unitDirection.y() + 1.0f);
-			auto color = (1.0f - t) * Arr3(1.0f, 1.0f, 1.0f) + t * Arr3(0.5f, 0.7f, 1.0f);
+  Arr4 lastNum(0.0f, 0.0f, 0.0f, 0.0f);
+  Mat4 rayTransform(
+    Arr4(1.0f, 0.0f, 0.0f, 0.0f),
+    Arr4(0.0f, 1.0f, 0.0f, 0.0f),
+    Arr4(0.0f, 0.0f, 1.0f, 0.0f),
+    Arr4(0.0f, 0.0f, 0.0f, 1.0f)
+  );
 
-			return curAttenuation * color;
-		}
+	for (int i = 0; i < 50; i++) {
+    if (!world[0]->hit(curRay, 0.001f, FLT_MAX, &hit, &mat)) {
+      lastNum = Arr4(background.x(), background.y(), background.z(), 1.0f);
+      break;
+    }
+
+    Arr3 emitted = mat.material->emitted(hit.textCoord.u, hit.textCoord.v, hit.point);
+
+    if (!mat.material->scatter(curRay, hit, &scat, randState)) {
+      lastNum = Arr4(emitted.x(), emitted.y(), emitted.z(), 1.0f);
+      break;
+    }
+
+    Mat4 emitTransf(
+      Arr4(1.0f, 0.0f, 0.0f, emitted.x()),
+      Arr4(0.0f, 1.0f, 0.0f, emitted.y()),
+      Arr4(0.0f, 0.0f, 1.0f, emitted.z()),
+      Arr4(0.0f, 0.0f, 0.0f, 1.0f)
+    );
+
+    Mat4 attentTransf(
+      Arr4(scat.colorAttenuation.x(), 0.0f, 0.0f, 0.0f),
+      Arr4(0.0f, scat.colorAttenuation.y(), 0.0f, 0.0f),
+      Arr4(0.0f, 0.0f, scat.colorAttenuation.z(), 0.0f),
+      Arr4(0.0f, 0.0f, 0.0f, 1.0f)
+    );
+
+    rayTransform = emitTransf * attentTransf * rayTransform;
+    curRay = scat.newRay;
 	}
 
-	return Arr3(0.0f, 0.0f, 0.0f);
+  Arr4 total = rayTransform * lastNum;
+	return Arr3(total.x(), total.y(), total.z());
 }
 
 __global__
-void render(Arr3 *frameBuffer, int width, int height, int nSample, Camera **cam, Hittable **world, curandState *randState) {
+void render(Arr3 *frameBuffer, int width, int height, int nSample, Arr3 *background, Camera **cam, Hittable **world, curandState *randState) {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 	int j = threadIdx.y + blockIdx.y * blockDim.y;
 	int k = threadIdx.z + blockIdx.z * blockDim.z;
@@ -80,7 +102,7 @@ void render(Arr3 *frameBuffer, int width, int height, int nSample, Camera **cam,
 	auto v = float(j + randomFloat(&localRandState)) / (height - 1);
 
 	Ray r = cam[0]->transform(u, v, &localRandState);
-	color += tracing(r, world, &localRandState);
+	color += tracing(r, world, background[0], &localRandState);
 
 	frameBuffer[pixelIndex] = color;
 }
@@ -136,7 +158,7 @@ void initGlobalRand(curandState* rand_state) {
 }
 
 __global__
-void randomScenes(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState) {
+void randomScenes(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState, Arr3 *background) {
 	auto localRandState = randState[0];
   
   texts[0] = new Checker(Arr3(0.2f, 0.3f, 0.1f), Arr3(0.9f, 0.9f, 0.9f));
@@ -192,10 +214,11 @@ void randomScenes(Camera **cam, Hittable **hits, Material **mats, Hittable **wor
 	auto aspect_ratio = 1.0f;
 
 	cam[0] = new Camera(lookfrom, lookat, vup, 40.0f, aspect_ratio, aperture, dist_to_focus);
+  background[0] = Arr3(0.7f, 0.8f, 1.0f);
 }
 
 __global__
-void twoSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState) {
+void twoSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState, Arr3 *background) {
   auto localRandState = randState[0];
 
   texts[0] = new Checker(Arr3(0.2f, 0.3f, 0.1f), Arr3(0.9f, 0.9f, 0.9f));
@@ -214,10 +237,11 @@ void twoSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable **world
 	auto aspect_ratio = 1.0f;
 
 	cam[0] = new Camera(lookfrom, lookat, vup, 40.0f, aspect_ratio, aperture, dist_to_focus);
+  background[0] = Arr3(0.7f, 0.8f, 1.0f);
 }
 
 __global__
-void twoPerlinSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState) {
+void twoPerlinSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState, Arr3 *background) {
   auto localRandState = randState[0];
 
   texts[0] = new Noise(&localRandState, 4.0f);
@@ -236,6 +260,7 @@ void twoPerlinSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable *
 	auto aspect_ratio = 1.0f;
 
 	cam[0] = new Camera(lookfrom, lookat, vup, 40.0f, aspect_ratio, aperture, dist_to_focus);
+  background[0] = Arr3(0.7f, 0.8f, 1.0f);
 }
 
 int main() {
@@ -264,11 +289,13 @@ int main() {
 	Material** mats;
 	Hittable** world;
   Texture** texts;
+  Arr3 *background;
 
 	checkCudaErrors(cudaMallocManaged((void**)&frameBuffers, fb_size));
 	checkCudaErrors(cudaMallocManaged((void**)&finalImageBuffers, finalImage_size));
 	checkCudaErrors(cudaMalloc((void**)&pixelRandState, pixel_rand_size));
 	checkCudaErrors(cudaMalloc((void**)&globalRandState, sizeof(curandState)));
+  checkCudaErrors(cudaMalloc((void**)&background, sizeof(Arr3)));
 
   int numObjects = 0;
 
@@ -296,15 +323,15 @@ int main() {
 
   switch (scene) {
     case 1:
-      randomScenes<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState);
+      randomScenes<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
       break;
     
     case 2:
-      twoSpheres<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState);
+      twoSpheres<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
       break;
 
     case 3:
-      twoPerlinSpheres<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState);
+      twoPerlinSpheres<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
       break;
   }
 	
@@ -320,7 +347,7 @@ int main() {
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
-	render<<<blocks, threads>>>(frameBuffers, imageWidth, imageHeight, samplePerPixel, camera, world, pixelRandState);
+	render<<<blocks, threads>>>(frameBuffers, imageWidth, imageHeight, samplePerPixel, background, camera, world, pixelRandState);
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
