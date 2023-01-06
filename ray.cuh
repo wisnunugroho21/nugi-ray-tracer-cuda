@@ -1,6 +1,6 @@
 #pragma once
 
-#include "arr3.cuh"
+#include "math/arr3.cuh"
 
 class Ray {
 	public:

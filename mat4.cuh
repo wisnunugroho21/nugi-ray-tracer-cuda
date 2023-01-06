@@ -6,7 +6,7 @@ a 4x4 Mat4 structure.  Used very often for affine vector transformations.
 */
 
 #include "arr4.cuh"
-#include "arr3.cuh"
+#include "math/arr3.cuh"
 
 #include <iostream>
 

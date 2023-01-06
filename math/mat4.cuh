@@ -6,7 +6,7 @@ a 4x4 Mat4 structure.  Used very often for affine vector transformations.
 */
 
 #include "arr4.cuh"
-#include "arr3.cuh"
+#include "math/arr3.cuh"
 
 class Mat4 {
 	public:
@@ -18,7 +18,6 @@ class Mat4 {
 		__host__ __device__ static Mat4 identity();
 
 		__host__ __device__ Arr4 operator [](int i) const;
-		__host__ __device__ Arr4& operator [](int i);
 
 		__host__ __device__ Mat4& operator += (const Mat4 &mat);
 		__host__ __device__ Mat4& operator += (const Arr4 &vec);
@@ -46,18 +45,6 @@ Arr4 Mat4::operator [](int i) const {
 		this->entries[i][2],
 		this->entries[i][3]
 	);
-}
-
-__host__ __device__
-Arr4& Mat4::operator [](int i) {
-	Arr4 res(
-		this->entries[i][0],
-		this->entries[i][1],
-		this->entries[i][2],
-		this->entries[i][3]
-	);
-
-	return res;
 }
 
 __host__ __device__
@@ -264,106 +251,90 @@ Mat4 Mat4::identity() {
 
 __host__ __device__
 Mat4& Mat4::operator += (const Mat4 &mat) {
-	float result[4][4];
 	for(int i = 0; i < 4; i++) {
 		for(int i2 = 0; i2 < 4; i2++) {
-			result[i][i2] = this->entries[i][i2] + mat[i][i2];
+			this->entries[i][i2] = this->entries[i][i2] + mat[i][i2];
 		}
 	}
 
-	Mat4 matRes(result);
-	return matRes;
+	return *this;
 }
 
 __host__ __device__
 Mat4& Mat4::operator += (const Arr4 &vec) {
-	float result[4][4];
 	for(int i = 0; i < 4; i++) {
 		for(int i2 = 0; i2 < 4; i2++) {
-			result[i][i2] = this->entries[i][i2] + vec[i];
+			this->entries[i][i2] = this->entries[i][i2] + vec[i];
 		}
 	}
 
-	Mat4 matRes(result);
-	return matRes;
+	return *this;
 }
 
 __host__ __device__
 Mat4& Mat4::operator += (const float t) {
-	float result[4][4];
 	for(int i = 0; i < 4; i++) {
 		for(int i2 = 0; i2 < 4; i2++) {
-			result[i][i2] = this->entries[i][i2] + t;
+			this->entries[i][i2] = this->entries[i][i2] + t;
 		}
 	}
 
-	Mat4 matRes(result);
-	return matRes;
+	return *this;
 }
 
 __host__ __device__
 Mat4& Mat4::operator -= (const Mat4 &mat) {
-	float result[4][4];
 	for(int i = 0; i < 4; i++) {
 		for(int i2 = 0; i2 < 4; i2++) {
-			result[i][i2] = this->entries[i][i2] - mat[i][i2];
+			this->entries[i][i2] = this->entries[i][i2] - mat[i][i2];
 		}
 	}
 
-	Mat4 matRes(result);
-	return matRes;
+	return *this;
 }
 
 __host__ __device__
 Mat4& Mat4::operator -= (const Arr4 &vec) {
-	float result[4][4];
 	for(int i = 0; i < 4; i++) {
 		for(int i2 = 0; i2 < 4; i2++) {
-			result[i][i2] = this->entries[i][i2] - vec[i];
+			this->entries[i][i2] = this->entries[i][i2] - vec[i];
 		}
 	}
 
-	Mat4 matRes(result);
-	return matRes;
+	return *this;
 }
 
 __host__ __device__
 Mat4& Mat4::operator -= (const float t) {
-	float result[4][4];
 	for(int i = 0; i < 4; i++) {
 		for(int i2 = 0; i2 < 4; i2++) {
-			result[i][i2] = this->entries[i][i2] - t;
+			this->entries[i][i2] = this->entries[i][i2] - t;
 		}
 	}
 
-	Mat4 matRes(result);
-	return matRes;
+	return *this;
 }
 
 __host__ __device__
 Mat4& Mat4::operator *= (const float t) {
-	float result[4][4];
 	for(int i = 0; i < 4; i++) {
 		for(int i2 = 0; i2 < 4; i2++) {
-			result[i][i2] = this->entries[i][i2] * t;
+			this->entries[i][i2] = this->entries[i][i2] * t;
 		}
 	}
 
-	Mat4 matRes(result);
-	return matRes;
+	return *this;
 }
 
 __host__ __device__
 Mat4& Mat4::operator /= (const float t) {
-	float result[4][4];
 	for(int i = 0; i < 4; i++) {
 		for(int i2 = 0; i2 < 4; i2++) {
-			result[i][i2] = this->entries[i][i2] / t;
+			this->entries[i][i2] = this->entries[i][i2] / t;
 		}
 	}
 
-	Mat4 matRes(result);
-	return matRes;
+	return *this;
 }
 
 __host__ __device__

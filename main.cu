@@ -8,8 +8,8 @@
 #include "material/dielectric.cuh"
 #include "texture/checker.cuh"
 #include "texture/noise.cuh"
-#include "mat4.cuh"
-#include "arr4.cuh"
+#include "math/mat4.cuh"
+#include "math/arr4.cuh"
 
 #include <iostream>
 #include <fstream>
