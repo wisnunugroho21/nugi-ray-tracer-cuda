@@ -1,7 +1,7 @@
 #pragma once
 
 #include "texture.cuh"
-#include "perlin.cuh"
+#include "utility/perlin.cuh"
 
 class Noise : public Texture {
   public:

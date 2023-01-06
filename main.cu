@@ -1,4 +1,4 @@
-#include "camera.cuh"
+#include "utility/camera.cuh"
 #include "hittable/hittable_list.cuh"
 #include "hittable/shape/sphere.cuh"
 #include "hittable/shape/moving_sphere.cuh"
@@ -362,7 +362,7 @@ int main() {
 
 	std::cerr << "\rwriting" << std::flush;
 
-	std::ofstream ofl("image.ppm");
+	std::ofstream ofl("bin/image.ppm");
 	ofl << "P3\n" << imageWidth << " " << imageHeight << "\n255\n";
 
 	for (int j = imageHeight - 1; j >= 0; j--) {

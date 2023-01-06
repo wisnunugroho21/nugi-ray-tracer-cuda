@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ray.cuh"
-#include "helper.cuh"
+#include "utility/ray.cuh"
+#include "helper/helper.cuh"
 
 class Camera {
 public:

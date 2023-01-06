@@ -1,6 +1,6 @@
 #pragma once
 
-#include "helper.cuh"
+#include "helper/helper.cuh"
 
 #include <cmath>
 

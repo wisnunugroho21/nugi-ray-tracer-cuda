@@ -1,7 +1,7 @@
 #pragma once
 
-#include "helper.cuh"
-#include "ray.cuh"
+#include "helper/helper.cuh"
+#include "utility/ray.cuh"
 
 class AABB {
   public:

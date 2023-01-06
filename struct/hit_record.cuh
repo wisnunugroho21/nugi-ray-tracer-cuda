@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ray.cuh"
+#include "utility/ray.cuh"
 
 struct FaceNormal {
 	Arr3 normal;

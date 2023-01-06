@@ -1,6 +1,6 @@
 #pragma once
 
-#include "helper.cuh"
+#include "helper/helper.cuh"
 #include "math/arr3.cuh"
 
 class Perlin {
