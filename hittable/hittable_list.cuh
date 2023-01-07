@@ -29,6 +29,7 @@ bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *rec, Mat
       isHitAnything = true;
       tClosest = tempRec.t;
 
+      rec->textCoord = tempRec.textCoord;
       rec->faceNormal = tempRec.faceNormal;
       rec->point = tempRec.point;
       rec->t = tempRec.t;

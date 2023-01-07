@@ -12,6 +12,8 @@
 #include "math/arr4.cuh"
 #include "material/diffuse_light.cuh"
 #include "hittable/shape/rectangle/xy_rect.cuh"
+#include "hittable/shape/rectangle/xz_rect.cuh"
+#include "hittable/shape/rectangle/yz_rect.cuh"
 
 #include <iostream>
 #include <fstream>
@@ -291,8 +293,37 @@ void twoPerlinSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable *
   background[0] = Arr3(0.7f, 0.8f, 1.0f);
 }
 
+__global__
+void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState, Arr3 *background) {
+  auto localRandState = randState[0];
+
+  mats[0] = new Lambertian(Arr3(0.65f, 0.05f, 0.05f));
+  mats[1] = new Lambertian(Arr3(0.73f, 0.73f, 0.73f));
+  mats[2] = new Lambertian(Arr3(0.12f, 0.45f, 0.15f));
+  mats[3] = new DiffuseLight(Arr3(15.0f, 15.0f, 15.0f));
+
+  hits[0] = new YZRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[2]);
+  hits[1] = new YZRect(0.0f, 555.0f, 0.0f, 555.0f, 0.0f, mats[0]);
+  hits[2] = new XZRect(213.0f, 343.0f, 227.0f, 332.0f, 554.0f, mats[3]);
+  hits[3] = new XZRect(0.0f, 555.0f, 0.0f, 555.0f, 0.0f, mats[1]);
+  hits[4] = new XZRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[1]);
+  hits[5] = new XYRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[1]);
+
+  world[0] = BvhNode::build(hits, 6, &localRandState);
+
+  Arr3 lookfrom(278.0f, 278.0f, -800.0f);
+	Arr3 lookat(278.0f, 278.0f, 0.0f);
+	Arr3 vup(0.0f, 1.0f, 0.0f);
+	auto dist_to_focus = 10.0f;
+	auto aperture = 0.1f;
+	auto aspect_ratio = 1.0f;
+
+	cam[0] = new Camera(lookfrom, lookat, vup, 40.0f, aspect_ratio, aperture, dist_to_focus);
+  background[0] = Arr3(0.0f, 0.0f, 0.0f);
+}
+
 int main() {
-  int scene = 4;
+  int scene = 5;
 
 	const int imageWidth = 1024;
 	const int imageHeight = 1024;
@@ -339,8 +370,10 @@ int main() {
 
     case 4:
       numObjects = 3; break;
-  }
 
+    case 5:
+      numObjects = 6; break;
+  }
 
 	checkCudaErrors(cudaMalloc((void**)&camera, sizeof(Camera*)));
 	checkCudaErrors(cudaMalloc((void**)&hits, numObjects * sizeof(Hittable*)));
@@ -367,6 +400,10 @@ int main() {
 
     case 4:
       simpleLights<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
+      break;
+
+    case 5:
+      cornellBox<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
       break;
   }
 	

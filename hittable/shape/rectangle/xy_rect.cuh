@@ -6,7 +6,7 @@
 class XYRect : public Hittable {
   public:
     __host__ __device__ XYRect() {}
-    __host__ __device__ XYRect(float x0, float x1, float y0, float y1, float k, Material *material) : x0{x0}, x1{x1}, y0{y0}, y1{x0}, k{k}, material{material} {}
+    __host__ __device__ XYRect(float x0, float x1, float y0, float y1, float k, Material *material) : x0{x0}, x1{x1}, y0{y0}, y1{y1}, k{k}, material{material} {}
 
     __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const override;
     __host__ __device__ virtual float numCompare(int index) const override;
