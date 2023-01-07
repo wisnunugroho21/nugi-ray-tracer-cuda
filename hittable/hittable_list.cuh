@@ -17,22 +17,22 @@ class HittableList : public Hittable {
 };
 
 __host__ __device__
-bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *rec, MaterialRecord *mat) const {
+bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const {
   MaterialRecord tempMat;
-  HitRecord tempRec;
+  HitRecord tempHit;
 
   bool isHitAnything = false;
   float tClosest = tMax;
 
   for (int i = 0; i < this->n; i++) {
-    if (this->objects[i]->hit(r, tMin, tClosest, &tempRec, &tempMat)) {
+    if (this->objects[i]->hit(r, tMin, tClosest, &tempHit, &tempMat)) {
       isHitAnything = true;
-      tClosest = tempRec.t;
+      tClosest = tempHit.t;
 
-      rec->textCoord = tempRec.textCoord;
-      rec->faceNormal = tempRec.faceNormal;
-      rec->point = tempRec.point;
-      rec->t = tempRec.t;
+      hit->textCoord = tempHit.textCoord;
+      hit->faceNormal = tempHit.faceNormal;
+      hit->point = tempHit.point;
+      hit->t = tempHit.t;
 
       mat->material = tempMat.material;
     }

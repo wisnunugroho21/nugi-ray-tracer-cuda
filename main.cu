@@ -14,6 +14,7 @@
 #include "hittable/shape/rectangle/xy_rect.cuh"
 #include "hittable/shape/rectangle/xz_rect.cuh"
 #include "hittable/shape/rectangle/yz_rect.cuh"
+#include "hittable/shape/rectangle/box.cuh"
 
 #include <iostream>
 #include <fstream>
@@ -309,7 +310,10 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
   hits[4] = new XZRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[1]);
   hits[5] = new XYRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[1]);
 
-  world[0] = BvhNode::build(hits, 6, &localRandState);
+  hits[6] = new Box(Arr3(130.0f, 0.0f, 65.0f), Arr3(295.0f, 165.0f, 230.0f), mats[1]);
+  hits[7] = new Box(Arr3(265.0f, 0.0f, 295.0f), Arr3(430.0f, 330.0f, 460.0f), mats[1]);
+
+  world[0] = BvhNode::build(hits, 8, &localRandState);
 
   Arr3 lookfrom(278.0f, 278.0f, -800.0f);
 	Arr3 lookat(278.0f, 278.0f, 0.0f);
@@ -372,7 +376,7 @@ int main() {
       numObjects = 3; break;
 
     case 5:
-      numObjects = 6; break;
+      numObjects = 8; break;
   }
 
 	checkCudaErrors(cudaMalloc((void**)&camera, sizeof(Camera*)));
