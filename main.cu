@@ -10,6 +10,8 @@
 #include "texture/noise.cuh"
 #include "math/mat4.cuh"
 #include "math/arr4.cuh"
+#include "material/diffuse_light.cuh"
+#include "hittable/shape/rectangle/xy_rect.cuh"
 
 #include <iostream>
 #include <fstream>
@@ -241,6 +243,32 @@ void twoSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable **world
 }
 
 __global__
+void simpleLights(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState, Arr3 *background) {
+  auto localRandState = randState[0];
+
+  texts[0] = new Noise(&localRandState, 4.0f);
+
+  mats[0] = new Lambertian(texts[0]);
+  mats[1] = new DiffuseLight(Arr3(4.0f, 4.0f, 4.0f));
+
+  hits[0] = new Sphere(Arr3(0.0f, -1000.0f, 0.0f), 1000.0f, mats[0]);
+  hits[1] = new Sphere(Arr3(0.0f, 2.0f, 0.0f), 2.0f, mats[0]);
+  hits[2] = new XYRect(3.0f, 5.0f, 1.0f, 3.0f, -2.0f, mats[1]);
+
+  world[0] = BvhNode::build(hits, 3, &localRandState);
+
+  Arr3 lookfrom(26.0f, 3.0f, 6.0f);
+	Arr3 lookat(0.0f, 2.0f, 0.0f);
+	Arr3 vup(0.0f, 1.0f, 0.0f);
+	auto dist_to_focus = 20.0f;
+	auto aperture = 0.0f;
+	auto aspect_ratio = 1.0f;
+
+	cam[0] = new Camera(lookfrom, lookat, vup, 40.0f, aspect_ratio, aperture, dist_to_focus);
+  background[0] = Arr3(0.0f, 0.0f, 0.0f);
+}
+
+__global__
 void twoPerlinSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState, Arr3 *background) {
   auto localRandState = randState[0];
 
@@ -264,11 +292,11 @@ void twoPerlinSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable *
 }
 
 int main() {
-  int scene = 3;
+  int scene = 4;
 
 	const int imageWidth = 1024;
 	const int imageHeight = 1024;
-	const int samplePerPixel = 32;
+	const int samplePerPixel = 128;
 
 	int tx = 8;
 	int ty = 8;
@@ -308,6 +336,9 @@ int main() {
 
     case 3:
       numObjects = 2; break;
+
+    case 4:
+      numObjects = 3; break;
   }
 
 
@@ -332,6 +363,10 @@ int main() {
 
     case 3:
       twoPerlinSpheres<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
+      break;
+
+    case 4:
+      simpleLights<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
       break;
   }
 	
