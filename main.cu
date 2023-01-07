@@ -15,6 +15,8 @@
 #include "hittable/shape/rectangle/xz_rect.cuh"
 #include "hittable/shape/rectangle/yz_rect.cuh"
 #include "hittable/shape/rectangle/box.cuh"
+#include "hittable/instance/rotationY.cuh"
+#include "hittable/instance/translation.cuh"
 
 #include <iostream>
 #include <fstream>
@@ -310,10 +312,15 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
   hits[4] = new XZRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[1]);
   hits[5] = new XYRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[1]);
 
-  hits[6] = new Box(Arr3(130.0f, 0.0f, 65.0f), Arr3(295.0f, 165.0f, 230.0f), mats[1]);
-  hits[7] = new Box(Arr3(265.0f, 0.0f, 295.0f), Arr3(430.0f, 330.0f, 460.0f), mats[1]);
+  hits[8] = new Box(Arr3(0.0f, 0.0f, 0.0f), Arr3(165.0f, 330.0f, 165.0f), mats[1]);
+  hits[9] = new RotationY(hits[8], 15.0f);
+  hits[6] = new Translation(hits[9], Arr3(265.0f, 0.0f, 295.0f));
 
-  world[0] = BvhNode::build(hits, 8, &localRandState);
+  hits[10] = new Box(Arr3(0.0f, 0.0f, 0.0f), Arr3(165.0f, 165.0f, 165.0f), mats[1]);
+  hits[11] = new RotationY(hits[10], -18.0f);
+  hits[7] = new Translation(hits[11], Arr3(130.0f, 0.0f, 65.0f));
+
+  world[0] = new HittableList(hits, 8);
 
   Arr3 lookfrom(278.0f, 278.0f, -800.0f);
 	Arr3 lookat(278.0f, 278.0f, 0.0f);
@@ -376,7 +383,7 @@ int main() {
       numObjects = 3; break;
 
     case 5:
-      numObjects = 8; break;
+      numObjects = 12; break;
   }
 
 	checkCudaErrors(cudaMalloc((void**)&camera, sizeof(Camera*)));

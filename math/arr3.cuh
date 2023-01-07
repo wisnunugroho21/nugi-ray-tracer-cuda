@@ -66,7 +66,7 @@ class Arr3
 		__host__ __device__ static Arr3 reflect(const Arr3& v, const Arr3& n);
 		__host__ __device__ static Arr3 refract(const Arr3& uv, const Arr3& n, float etaiOverEtat);
 
-	private:
+	public:
 		float e[3];
 };
 
