@@ -320,7 +320,7 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
   hits[11] = new RotationY(hits[10], -18.0f);
   hits[7] = new Translation(hits[11], Arr3(130.0f, 0.0f, 65.0f));
 
-  world[0] = new HittableList(hits, 8);
+  world[0] = BvhNode::build(hits, 8, &localRandState);
 
   Arr3 lookfrom(278.0f, 278.0f, -800.0f);
 	Arr3 lookat(278.0f, 278.0f, 0.0f);
