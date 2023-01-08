@@ -17,6 +17,7 @@
 #include "hittable/shape/rectangle/box.cuh"
 #include "hittable/instance/rotationY.cuh"
 #include "hittable/instance/translation.cuh"
+#include "helper/image_loader.cuh"
 
 #include <iostream>
 #include <fstream>
@@ -334,7 +335,7 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
 }
 
 int main() {
-  int scene = 5;
+  int scene = 1;
 
 	const int imageWidth = 1024;
 	const int imageHeight = 1024;
@@ -395,6 +396,8 @@ int main() {
 	initGlobalRand<<<1, 1>>>(globalRandState);
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
+
+  // auto p = loadImageToCUDA("asset/earth_map.jpg");
 
   switch (scene) {
     case 1:
