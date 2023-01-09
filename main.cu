@@ -76,10 +76,8 @@ Arr3 tracing(const Ray &r, Hittable **world, Hittable **lights, const Arr3 &back
       break;
     }
     
-    CosinePdf cosinePdf(hit.faceNormal.normal);
     HittablePdf hittablePdf(lights, hit.point);
-
-    MixturePdf mixedPdf(cosinePdf, hittablePdf);
+    MixturePdf mixedPdf(scat.pdf, hittablePdf);
 
     Arr3 dir = mixedPdf.generate(randState);
     Ray newRay = Ray(hit.point, dir, curRay.time());

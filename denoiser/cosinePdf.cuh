@@ -5,6 +5,7 @@
 
 class CosinePdf : public PDF {
   public:
+    __host__ __device__ CosinePdf() {}
     __host__ __device__ CosinePdf(const Arr3 &w) { uvw.buildFromW(w); }
 
     __host__ __device__ virtual float value(const Arr3 &direction) const override;

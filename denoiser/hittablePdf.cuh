@@ -6,6 +6,7 @@
 
 class HittablePdf : public PDF {
   public:
+    __host__ __device__ HittablePdf() {}
     __host__ __device__ HittablePdf(Hittable **object, const Arr3 &origin) : object(object), origin(origin) {}
 
     __host__ __device__ virtual float value(const Arr3 &direction) const override;

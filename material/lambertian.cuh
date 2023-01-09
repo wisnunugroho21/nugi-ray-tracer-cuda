@@ -23,9 +23,9 @@ bool Lambertian::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *sc
   uvw.buildFromW(hit.faceNormal.normal);
   auto scatterDirection = uvw.local(randomCosineDirection(randState));
 
-	scattered->newRay = Ray(hit.point, scatterDirection.unitVector(), ray.time());
+	scattered->specular.isSpecular = false;
 	scattered->colorAttenuation = this->texture->map(hit.textCoord.u, hit.textCoord.v, hit.point);
-  scattered->pdf = Arr3::dot(uvw.w(), scattered->newRay.direction()) / 3.141592653589f;
+  scattered->pdf = CosinePdf(hit.faceNormal.normal);
 
 	return true;
 }
