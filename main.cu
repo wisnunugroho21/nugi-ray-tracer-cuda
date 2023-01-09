@@ -18,6 +18,10 @@
 #include "hittable/instance/rotationY.cuh"
 #include "hittable/instance/translation.cuh"
 #include "helper/image_loader.cuh"
+#include "hittable/instance/flipFace.cuh"
+#include "denoiser/cosinePdf.cuh"
+#include "denoiser/hittablePdf.cuh"
+#include "denoiser/mixturePdf.cuh"
 
 #include <iostream>
 #include <fstream>
@@ -44,7 +48,7 @@ void writeColor(std::ofstream& ofl, Arr3& frameBuffer, int samplePerPixel = 1) {
 }
 
 __device__
-Arr3 tracing(const Ray &r, Hittable** world, const Arr3 &background, curandState* randState) {
+Arr3 tracing(const Ray &r, Hittable **world, Hittable **lights, const Arr3 &background, curandState* randState) {
 	Ray curRay = r;
 
 	HitRecord hit;
@@ -65,12 +69,23 @@ Arr3 tracing(const Ray &r, Hittable** world, const Arr3 &background, curandState
       break;
     }
 
-    Arr3 emitted = mat.material->emitted(hit.textCoord.u, hit.textCoord.v, hit.point);
+    Arr3 emitted = mat.material->emitted(curRay, hit);
 
     if (!mat.material->scatter(curRay, hit, &scat, randState)) {
       lastNum = Arr4(emitted.x(), emitted.y(), emitted.z(), 1.0f);
       break;
     }
+    
+    CosinePdf cosinePdf(hit.faceNormal.normal);
+    HittablePdf hittablePdf(lights, hit.point);
+
+    MixturePdf mixedPdf(cosinePdf, hittablePdf);
+
+    Arr3 dir = mixedPdf.generate(randState);
+    Ray newRay = Ray(hit.point, dir, curRay.time());
+
+    float pdfVal = mixedPdf.value(newRay.direction());
+    float scatteredPdf = mat.material->scatteringPdf(curRay, hit, newRay, randState);
 
     Mat4 emitTransf(
       Arr4(1.0f, 0.0f, 0.0f, emitted.x()),
@@ -86,16 +101,30 @@ Arr3 tracing(const Ray &r, Hittable** world, const Arr3 &background, curandState
       Arr4(0.0f, 0.0f, 0.0f, 1.0f)
     );
 
-    rayTransform = emitTransf * attentTransf * rayTransform;
-    curRay = scat.newRay;
+    Mat4 scatteredPdfTransf(
+      Arr4(scatteredPdf, 0.0f, 0.0f, 0.0f),
+      Arr4(0.0f, scatteredPdf, 0.0f, 0.0f),
+      Arr4(0.0f, 0.0f, scatteredPdf, 0.0f),
+      Arr4(0.0f, 0.0f, 0.0f, 1.0f)
+    );
+
+    Mat4 valuePdfTransf(
+      Arr4(pdfVal, 0.0f, 0.0f, 0.0f),
+      Arr4(0.0f, pdfVal, 0.0f, 0.0f),
+      Arr4(0.0f, 0.0f, pdfVal, 0.0f),
+      Arr4(0.0f, 0.0f, 0.0f, 1.0f)
+    );
+
+    rayTransform = emitTransf * attentTransf * scatteredPdfTransf * rayTransform * valuePdfTransf.inverse();
+    curRay = newRay;
 	}
 
   Arr4 total = rayTransform * lastNum;
-	return Arr3(total.x(), total.y(), total.z());
+	return Arr3(total.x() / total.w(), total.y() / total.w(), total.z() / total.w());
 }
 
 __global__
-void render(Arr3 *frameBuffer, int width, int height, int nSample, Arr3 *background, Camera **cam, Hittable **world, curandState *randState) {
+void render(Arr3 *frameBuffer, int width, int height, int nSample, Arr3 *background, Camera **cam, Hittable **world, Hittable **lights, curandState *randState) {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 	int j = threadIdx.y + blockIdx.y * blockDim.y;
 	int k = threadIdx.z + blockIdx.z * blockDim.z;
@@ -110,7 +139,7 @@ void render(Arr3 *frameBuffer, int width, int height, int nSample, Arr3 *backgro
 	auto v = float(j + randomFloat(&localRandState)) / (height - 1);
 
 	Ray r = cam[0]->transform(u, v, &localRandState);
-	color += tracing(r, world, background[0], &localRandState);
+	color += tracing(r, world, lights, background[0], &localRandState);
 
 	frameBuffer[pixelIndex] = color;
 }
@@ -298,7 +327,7 @@ void twoPerlinSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable *
 }
 
 __global__
-void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState, Arr3 *background) {
+void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, Hittable **lights, curandState *randState, Arr3 *background) {
   auto localRandState = randState[0];
 
   mats[0] = new Lambertian(Arr3(0.65f, 0.05f, 0.05f));
@@ -308,7 +337,8 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
 
   hits[0] = new YZRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[2]);
   hits[1] = new YZRect(0.0f, 555.0f, 0.0f, 555.0f, 0.0f, mats[0]);
-  hits[2] = new XZRect(213.0f, 343.0f, 227.0f, 332.0f, 554.0f, mats[3]);
+  hits[12] = new XZRect(213.0f, 343.0f, 227.0f, 332.0f, 554.0f, mats[3]);
+  hits[2] = new FlipFace(hits[12]);
   hits[3] = new XZRect(0.0f, 555.0f, 0.0f, 555.0f, 0.0f, mats[1]);
   hits[4] = new XZRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[1]);
   hits[5] = new XYRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[1]);
@@ -322,12 +352,13 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
   hits[7] = new Translation(hits[11], Arr3(130.0f, 0.0f, 65.0f));
 
   world[0] = BvhNode::build(hits, 8, &localRandState);
+  lights[0] = new XZRect(213.0f, 343.0f, 227.0f, 332.0f, 554.0f, mats[3]);
 
   Arr3 lookfrom(278.0f, 278.0f, -800.0f);
 	Arr3 lookat(278.0f, 278.0f, 0.0f);
 	Arr3 vup(0.0f, 1.0f, 0.0f);
 	auto dist_to_focus = 10.0f;
-	auto aperture = 0.1f;
+	auto aperture = 0.0f;
 	auto aspect_ratio = 1.0f;
 
 	cam[0] = new Camera(lookfrom, lookat, vup, 40.0f, aspect_ratio, aperture, dist_to_focus);
@@ -335,7 +366,7 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
 }
 
 int main() {
-  int scene = 1;
+  int scene = 5;
 
 	const int imageWidth = 1024;
 	const int imageHeight = 1024;
@@ -361,6 +392,7 @@ int main() {
 	Hittable** world;
   Texture** texts;
   Arr3 *background;
+  Hittable **lights;
 
 	checkCudaErrors(cudaMallocManaged((void**)&frameBuffers, fb_size));
 	checkCudaErrors(cudaMallocManaged((void**)&finalImageBuffers, finalImage_size));
@@ -384,7 +416,7 @@ int main() {
       numObjects = 3; break;
 
     case 5:
-      numObjects = 12; break;
+      numObjects = 13; break;
   }
 
 	checkCudaErrors(cudaMalloc((void**)&camera, sizeof(Camera*)));
@@ -392,6 +424,7 @@ int main() {
 	checkCudaErrors(cudaMalloc((void**)&mats, numObjects * sizeof(Material*)));
 	checkCudaErrors(cudaMalloc((void**)&world, sizeof(Hittable*)));
   checkCudaErrors(cudaMalloc((void**)&texts, 1 * sizeof(Texture*)));
+  checkCudaErrors(cudaMalloc((void**)&lights, sizeof(Hittable*)));
 
 	initGlobalRand<<<1, 1>>>(globalRandState);
 	checkCudaErrors(cudaGetLastError());
@@ -417,7 +450,7 @@ int main() {
       break;
 
     case 5:
-      cornellBox<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
+      cornellBox<<<1, 1>>>(camera, hits, mats, world, texts, lights, globalRandState, background);
       break;
   }
 	
@@ -433,7 +466,7 @@ int main() {
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
-	render<<<blocks, threads>>>(frameBuffers, imageWidth, imageHeight, samplePerPixel, background, camera, world, pixelRandState);
+	render<<<blocks, threads>>>(frameBuffers, imageWidth, imageHeight, samplePerPixel, background, camera, world, lights, pixelRandState);
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 

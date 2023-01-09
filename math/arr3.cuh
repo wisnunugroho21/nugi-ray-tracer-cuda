@@ -53,6 +53,7 @@ class Arr3
 		__device__ static Arr3 randomUnitVector(curandState *randState);
 		__device__ static Arr3 randomInUnitDisk(curandState *randState);
 		__device__ static Arr3 randomInUnitSphere(curandState *randState);
+    __device__ static Arr3 randomInHemisphere(const Arr3 &normal, curandState *randState);
 
     __host__ static Arr3 random();
 		__host__ static Arr3 random(float min, float max);
@@ -243,6 +244,17 @@ Arr3 Arr3::randomInUnitSphere(curandState *randState) {
 		auto p = Arr3::random(-1, 1, randState);
 		if (p.lengthSquared() < 1) return p;
 	}
+}
+
+__device__ 
+Arr3 Arr3::randomInHemisphere(const Arr3 &normal, curandState *randState) {
+  Arr3 in_unit_sphere = randomInUnitSphere(randState);
+
+  if (Arr3::dot(in_unit_sphere, normal) > 0.0f) {
+    return in_unit_sphere;
+  } 
+  
+  return -in_unit_sphere;
 }
 
 __host__

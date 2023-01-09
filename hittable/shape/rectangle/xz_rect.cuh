@@ -3,6 +3,8 @@
 #include "helper/helper.cuh"
 #include "hittable/hittable.cuh"
 
+#include <limits>
+
 class XZRect : public Hittable {
   public:
     __host__ __device__ XZRect() {}
@@ -11,6 +13,9 @@ class XZRect : public Hittable {
     __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const override;
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
+
+    __host__ __device__ virtual float pdfValue(const Arr3 &origin, const Arr3 &v) const override;
+    __device__ virtual Arr3 random(const Arr3 &origin, curandState* randState) const override;
 
   private:
     float x0, x1, z0, z1, k;
@@ -31,16 +36,21 @@ bool XZRect::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialR
     return false;
   }
 
-  hit->t = t;
-  hit->point = r.at(t);
+  if (hit != nullptr && hit != NULL) { 
+    hit->t = t;
+    hit->point = r.at(t);
 
-  hit->textCoord.u = (x - this->x0) / (this->x1 - this->x0);
-  hit->textCoord.v = (z - this->z0) / (this->z1 - this->z0);
+    hit->textCoord.u = (x - this->x0) / (this->x1 - this->x0);
+    hit->textCoord.v = (z - this->z0) / (this->z1 - this->z0);
 
-  auto outwardNormal = Arr3(0.0f, 1.0f, 0.0f);
-  hit->faceNormal = FaceNormal(r, outwardNormal);
+    auto outwardNormal = Arr3(0.0f, 1.0f, 0.0f);
+    hit->faceNormal = FaceNormal(r, outwardNormal);
+  }
 
-  mat->material = this->material;
+  if (mat != nullptr && mat != NULL) {
+    mat->material = this->material;
+  }
+  
   return true;
 }
 
@@ -53,4 +63,25 @@ __host__ __device__
 bool XZRect::boundingBox(BoundingRecord *box) {
   box->boundingBox = AABB(Arr3(this->x0, this->k - 0.0001f, this->z0), Arr3(this->x1, this->k + 0.0001f, this->z1));
   return true;
+}
+
+__host__ __device__ 
+float XZRect::pdfValue(const Arr3 &origin, const Arr3 &v) const {
+  HitRecord hit;
+  MaterialRecord mat;
+  if (!this->hit(Ray(origin, v), 0.001, FLT_MAX, &hit, &mat)) {
+    return 0;
+  } 
+
+  auto area = (this->x1 - this->x0) * (this->z1 - this->z0);
+  auto distanceSquared = hit.t * hit.t * v.lengthSquared();
+  auto cosine = fabsf(Arr3::dot(v, hit.faceNormal.normal) / v.length());
+
+  return distanceSquared / (cosine * area);
+}
+
+__device__
+Arr3 XZRect::random(const Arr3 &origin, curandState* randState) const {
+  auto random_point = Arr3(randomFloat(x0,x1, randState), k, randomFloat(z0, z1, randState));
+  return random_point - origin;
 }

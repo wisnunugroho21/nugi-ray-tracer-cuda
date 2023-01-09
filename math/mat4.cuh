@@ -388,7 +388,7 @@ Mat4 operator * (float &left, const Mat4 &right) {
 	float result[4][4];
 	for(int i = 0; i < 4; i++) {
 		for(int i2 = 0; i2 < 4; i2++) {
-			result[i][i2] = right[i][i2] * left;
+			result[i][i2] = left * right[i][i2];
 		}
 	}
 

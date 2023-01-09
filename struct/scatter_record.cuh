@@ -5,4 +5,5 @@
 struct ScatterRecord {
 	Arr3 colorAttenuation;
 	Ray newRay;
+  float pdf;
 };

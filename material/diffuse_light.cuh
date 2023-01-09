@@ -10,7 +10,7 @@ class DiffuseLight : public Material {
     __host__ __device__ DiffuseLight(const Arr3 &color) : emit{new Solid(color)} {}
     
     __device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const override;
-    __host__ __device__ virtual Arr3 emitted(float u, float v, const Arr3 &point) const override;
+    __host__ __device__ virtual Arr3 emitted(const Ray &ray, const HitRecord &hit) const override;
 
   private:
     Texture *emit;
@@ -22,6 +22,9 @@ bool DiffuseLight::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *
 }
 
 __host__ __device__ 
-Arr3 DiffuseLight::emitted(float u, float v, const Arr3 &point) const {
-  return this->emit->map(u, v, point);
+Arr3 DiffuseLight::emitted(const Ray &ray, const HitRecord &hit) const {
+  if (hit.faceNormal.frontFace)
+    return this->emit->map(hit.textCoord.u, hit.textCoord.v, hit.point);
+
+  return Arr3(0.0f, 0.0f, 0.0f);
 }

@@ -31,16 +31,21 @@ bool XYRect::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialR
     return false;
   }
 
-  hit->t = t;
-  hit->point = r.at(t);
+  if (hit != nullptr && hit != NULL) {
+    hit->t = t;
+    hit->point = r.at(t);
 
-  hit->textCoord.u = (x - this->x0) / (this->x1 - this->x0);
-  hit->textCoord.v = (y - this->y0) / (this->y1 - this->y0);
+    hit->textCoord.u = (x - this->x0) / (this->x1 - this->x0);
+    hit->textCoord.v = (y - this->y0) / (this->y1 - this->y0);
 
-  auto outwardNormal = Arr3(0.0f, 0.0f, 1.0f);
-  hit->faceNormal = FaceNormal(r, outwardNormal);
+    auto outwardNormal = Arr3(0.0f, 0.0f, 1.0f);
+    hit->faceNormal = FaceNormal(r, outwardNormal);
+  }
 
-  mat->material = this->material;
+  if (mat != nullptr && mat != NULL) {
+    mat->material = this->material;
+  }
+    
   return true;
 }
 
