@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <curand_kernel.h>
 
+#include "math/arr3.cuh"
+
 __device__ float randomFloat(curandState *randState);
 __device__ float randomFloat(float min, float max, curandState *randState);
 
@@ -48,5 +50,5 @@ float degreesToRadians(float degrees) {
 
 __device__
 int randInt(int min, int max, curandState *randState) {
-	return static_cast<int>(randomFloat(min, max + 1, randState));
+	return static_cast<int>(randomFloat(min, max, randState));
 }

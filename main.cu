@@ -48,7 +48,7 @@ void writeColor(std::ofstream& ofl, Arr3& frameBuffer, int samplePerPixel = 1) {
 }
 
 __device__
-Arr3 tracing(const Ray &r, Hittable **world, Hittable **lights, const Arr3 &background, curandState* randState) {
+Arr3 tracing(const Ray &r, Hittable **world, Hittable **lightLists, const Arr3 &background, curandState* randState) {
 	Ray curRay = r;
 
 	HitRecord hit;
@@ -75,8 +75,22 @@ Arr3 tracing(const Ray &r, Hittable **world, Hittable **lights, const Arr3 &back
       lastNum = Arr4(emitted.x(), emitted.y(), emitted.z(), 1.0f);
       break;
     }
+
+    if (scat.specular.isSpecular) {
+      Mat4 attentTransf(
+        Arr4(scat.colorAttenuation.x(), 0.0f, 0.0f, 0.0f),
+        Arr4(0.0f, scat.colorAttenuation.y(), 0.0f, 0.0f),
+        Arr4(0.0f, 0.0f, scat.colorAttenuation.z(), 0.0f),
+        Arr4(0.0f, 0.0f, 0.0f, 1.0f)
+      );
+
+      rayTransform = attentTransf * rayTransform;
+      curRay = scat.specular.ray;
+
+      continue;
+    }
     
-    HittablePdf hittablePdf(lights, hit.point);
+    HittablePdf hittablePdf(lightLists, hit.point);
     MixturePdf mixedPdf(scat.pdf, hittablePdf);
 
     Arr3 dir = mixedPdf.generate(randState);
@@ -122,7 +136,7 @@ Arr3 tracing(const Ray &r, Hittable **world, Hittable **lights, const Arr3 &back
 }
 
 __global__
-void render(Arr3 *frameBuffer, int width, int height, int nSample, Arr3 *background, Camera **cam, Hittable **world, Hittable **lights, curandState *randState) {
+void render(Arr3 *frameBuffer, int width, int height, int nSample, Arr3 *background, Camera **cam, Hittable **world, Hittable **lightList, curandState *randState) {
 	int i = threadIdx.x + blockIdx.x * blockDim.x;
 	int j = threadIdx.y + blockIdx.y * blockDim.y;
 	int k = threadIdx.z + blockIdx.z * blockDim.z;
@@ -137,7 +151,7 @@ void render(Arr3 *frameBuffer, int width, int height, int nSample, Arr3 *backgro
 	auto v = float(j + randomFloat(&localRandState)) / (height - 1);
 
 	Ray r = cam[0]->transform(u, v, &localRandState);
-	color += tracing(r, world, lights, background[0], &localRandState);
+	color += tracing(r, world, lightList, background[0], &localRandState);
 
 	frameBuffer[pixelIndex] = color;
 }
@@ -152,10 +166,16 @@ void sampling(Arr3 *frameBuffers, Arr3 *finalImageBuffers, int width, int height
 
 	for (int k = 0; k < nSample; k++) {
 		int sampleIndex = k + i * nSample + j * width * nSample;
+
+    if (frameBuffers[sampleIndex][0] != frameBuffers[sampleIndex][0]) frameBuffers[sampleIndex][0] = 0.0;
+    if (frameBuffers[sampleIndex][1] != frameBuffers[sampleIndex][1]) frameBuffers[sampleIndex][1] = 0.0;
+    if (frameBuffers[sampleIndex][2] != frameBuffers[sampleIndex][2]) frameBuffers[sampleIndex][2] = 0.0;
+
 		color += frameBuffers[sampleIndex];
 	}
 
 	color /= float(nSample);
+  
 	color[0] = sqrtf(color[0]);
 	color[1] = sqrtf(color[1]);
 	color[2] = sqrtf(color[2]);
@@ -325,13 +345,15 @@ void twoPerlinSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable *
 }
 
 __global__
-void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, Hittable **lights, curandState *randState, Arr3 *background) {
+void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, Hittable **lights, Hittable **lightLists, curandState *randState, Arr3 *background) {
   auto localRandState = randState[0];
 
   mats[0] = new Lambertian(Arr3(0.65f, 0.05f, 0.05f));
   mats[1] = new Lambertian(Arr3(0.73f, 0.73f, 0.73f));
   mats[2] = new Lambertian(Arr3(0.12f, 0.45f, 0.15f));
   mats[3] = new DiffuseLight(Arr3(15.0f, 15.0f, 15.0f));
+  mats[4] = new Metal(Arr3(0.8f, 0.85f, 0.88f), 0.0f);
+  mats[5] = new Dielectric(1.5f);
 
   hits[0] = new YZRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[2]);
   hits[1] = new YZRect(0.0f, 555.0f, 0.0f, 555.0f, 0.0f, mats[0]);
@@ -341,16 +363,16 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
   hits[4] = new XZRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[1]);
   hits[5] = new XYRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[1]);
 
-  hits[8] = new Box(Arr3(0.0f, 0.0f, 0.0f), Arr3(165.0f, 330.0f, 165.0f), mats[1]);
+  hits[8] = new Box(Arr3(0.0f, 0.0f, 0.0f), Arr3(165.0f, 330.0f, 165.0f), mats[4]);
   hits[9] = new RotationY(hits[8], 15.0f);
   hits[6] = new Translation(hits[9], Arr3(265.0f, 0.0f, 295.0f));
 
-  hits[10] = new Box(Arr3(0.0f, 0.0f, 0.0f), Arr3(165.0f, 165.0f, 165.0f), mats[1]);
-  hits[11] = new RotationY(hits[10], -18.0f);
-  hits[7] = new Translation(hits[11], Arr3(130.0f, 0.0f, 65.0f));
+  hits[7] = new Sphere(Arr3(190.0f, 90.0f, 190.f), 90.0f, mats[5]);
 
   world[0] = BvhNode::build(hits, 8, &localRandState);
-  lights[0] = new XZRect(213.0f, 343.0f, 227.0f, 332.0f, 554.0f, mats[3]);
+  lights[0] = new XZRect(213.0f, 343.0f, 227.0f, 332.0f, 554.0f, mats[0]);
+  lights[1] = new Sphere(Arr3(190.0f, 90.0f, 190.f), 90.0f, mats[0]);
+  lightLists[0] = new HittableList(lights, 2);
 
   Arr3 lookfrom(278.0f, 278.0f, -800.0f);
 	Arr3 lookat(278.0f, 278.0f, 0.0f);
@@ -391,6 +413,7 @@ int main() {
   Texture** texts;
   Arr3 *background;
   Hittable **lights;
+  Hittable **lightLists;
 
 	checkCudaErrors(cudaMallocManaged((void**)&frameBuffers, fb_size));
 	checkCudaErrors(cudaMallocManaged((void**)&finalImageBuffers, finalImage_size));
@@ -422,7 +445,8 @@ int main() {
 	checkCudaErrors(cudaMalloc((void**)&mats, numObjects * sizeof(Material*)));
 	checkCudaErrors(cudaMalloc((void**)&world, sizeof(Hittable*)));
   checkCudaErrors(cudaMalloc((void**)&texts, 1 * sizeof(Texture*)));
-  checkCudaErrors(cudaMalloc((void**)&lights, sizeof(Hittable*)));
+  checkCudaErrors(cudaMalloc((void**)&lights, 2 * sizeof(Hittable*)));
+  checkCudaErrors(cudaMalloc((void**)&lightLists, sizeof(Hittable*)));
 
 	initGlobalRand<<<1, 1>>>(globalRandState);
 	checkCudaErrors(cudaGetLastError());
@@ -448,7 +472,7 @@ int main() {
       break;
 
     case 5:
-      cornellBox<<<1, 1>>>(camera, hits, mats, world, texts, lights, globalRandState, background);
+      cornellBox<<<1, 1>>>(camera, hits, mats, world, texts, lights, lightLists, globalRandState, background);
       break;
   }
 	
@@ -464,7 +488,7 @@ int main() {
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 
-	render<<<blocks, threads>>>(frameBuffers, imageWidth, imageHeight, samplePerPixel, background, camera, world, lights, pixelRandState);
+	render<<<blocks, threads>>>(frameBuffers, imageWidth, imageHeight, samplePerPixel, background, camera, world, lightLists, pixelRandState);
 	checkCudaErrors(cudaGetLastError());
 	checkCudaErrors(cudaDeviceSynchronize());
 

@@ -44,13 +44,18 @@ bool MovingSphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Mat
 		}
 	}
 
-	hit->t = root;
-	hit->point = r.at(root);
+  if (hit != nullptr && hit != NULL) {
+    hit->t = root;
+    hit->point = r.at(root);
 
-	Arr3 outwardNormal = (hit->point - this->center(r.time())) / this->radius;
-	hit->faceNormal = FaceNormal(r, outwardNormal);
+    Arr3 outwardNormal = (hit->point - this->center(r.time())) / this->radius;
+    hit->faceNormal = FaceNormal(r, outwardNormal);
+  }
 
-	mat->material = this->material;
+  if (mat != nullptr && mat != NULL) {
+    mat->material = this->material;
+  }
+	
 	return true;
 }
 

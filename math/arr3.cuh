@@ -54,6 +54,7 @@ class Arr3
 		__device__ static Arr3 randomInUnitDisk(curandState *randState);
 		__device__ static Arr3 randomInUnitSphere(curandState *randState);
     __device__ static Arr3 randomInHemisphere(const Arr3 &normal, curandState *randState);
+    __device__ static Arr3 randomToSphere(double radius, double distanceSquared, curandState *randState);
 
     __host__ static Arr3 random();
 		__host__ static Arr3 random(float min, float max);
@@ -257,6 +258,19 @@ Arr3 Arr3::randomInHemisphere(const Arr3 &normal, curandState *randState) {
   return -in_unit_sphere;
 }
 
+__device__ 
+Arr3 Arr3::randomToSphere(double radius, double distanceSquared, curandState *randState) {
+  auto r1 = randomFloat(randState);
+  auto r2 = randomFloat(randState);
+  auto z = 1.0f + r2 * (sqrtf(1.0f - radius * radius / distanceSquared) - 1.0f);
+
+  auto phi = 2.0f * 3.1415926535897932385f * r1;
+  auto x = cosf(phi) * sqrtf(1.0f - z * z);
+  auto y = sinf(phi) * sqrtf(1.0f - z * z);
+
+  return Arr3(x, y, z);
+}
+
 __host__
 Arr3 Arr3::random() {
 	return Arr3(randomFloat(), randomFloat(), randomFloat());
@@ -299,6 +313,8 @@ Arr3 Arr3::randomInUnitSphere() {
 		if (p.lengthSquared() < 1) return p;
 	}
 }
+
+
 
 __host__ __device__
 Arr3 operator + (Arr3 u, Arr3 v) {

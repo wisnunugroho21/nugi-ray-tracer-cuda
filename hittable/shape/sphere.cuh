@@ -3,6 +3,8 @@
 #include "hittable/hittable.cuh"
 #include "material/material.cuh"
 
+#include <limits>
+
 class Sphere : public Hittable {
   public:
     __host__ __device__ Sphere(Arr3 center, float radius, Material *material) : center{center}, radius{radius}, material{material} {}
@@ -10,6 +12,9 @@ class Sphere : public Hittable {
     __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const override;
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
+
+    __host__ __device__ virtual float pdfValue(const Arr3 &origin, const Arr3 &direction) const override;
+    __device__ virtual Arr3 random(const Arr3 &origin, curandState* randState) const override;
 
     __host__ __device__ static TextureCoordinate getUV(const Arr3 &point);
 
@@ -40,15 +45,19 @@ bool Sphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialR
 		}
 	}
 
-	hit->t = root;
-	hit->point = r.at(root);
-  
+  if (hit != nullptr && hit != NULL) {
+    hit->t = root;
+    hit->point = r.at(root);
 
-	Arr3 outwardNormal = (hit->point - this->center) / this->radius;
-	hit->faceNormal = FaceNormal(r, outwardNormal);
+    Arr3 outwardNormal = (hit->point - this->center) / this->radius;
+    hit->faceNormal = FaceNormal(r, outwardNormal);
 
-  hit->textCoord = Sphere::getUV(outwardNormal);
-	mat->material = this->material;
+    hit->textCoord = Sphere::getUV(outwardNormal);
+  }
+
+	if (mat != nullptr && mat != NULL) {
+    mat->material = this->material;
+  }
 
 	return true;
 }
@@ -66,6 +75,30 @@ bool Sphere::boundingBox(BoundingRecord *box) {
 __host__ __device__ 
 float Sphere::numCompare(int index) const {
   return (this->center - Arr3(this->radius, this->radius, this->radius)).get(index);
+}
+
+__host__ __device__ 
+float Sphere::pdfValue(const Arr3 &origin, const Arr3 &direction) const {
+  HitRecord hit;
+
+  if (!this->hit(Ray(origin, direction), 0.001f, FLT_MAX, &hit, nullptr)) {
+    return 0.0f;
+  }
+
+  auto cosThetaMax = sqrtf(1.0f - this->radius * this->radius / (this->center - origin).lengthSquared());
+  auto solidAngle = 2.0f * 3.1415926535897932385f * (1.0f - cosThetaMax);
+
+  return 1.0f / solidAngle;
+}
+
+__device__ 
+Arr3 Sphere::random(const Arr3 &origin, curandState* randState) const {
+  Arr3 direction = this->center - origin;
+  auto distanceSquared = direction.lengthSquared();
+  
+  ONB uvw;
+  uvw.buildFromW(direction);
+  return uvw.local(Arr3::randomToSphere(this->radius, distanceSquared, randState));
 }
 
 __host__ __device__ 

@@ -12,7 +12,7 @@ class Hittable {
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) = 0;
 
     __host__ __device__
-    virtual float pdfValue(const Arr3 &origin, const Arr3 &v) const {
+    virtual float pdfValue(const Arr3 &origin, const Arr3 &direction) const {
       return 0.0f;
     }
 

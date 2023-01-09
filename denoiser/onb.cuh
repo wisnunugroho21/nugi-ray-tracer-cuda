@@ -24,7 +24,7 @@ class ONB {
 __host__ __device__
 void ONB::buildFromW(const Arr3 &n) {
   this->axis[2] = n.unitVector();
-  Arr3 a = (fabs(w().x()) > 0.9f) ? Arr3(0.0f, 1.0f, 0.0f) : Arr3(1.0f, 0.0f, 0.0f);
+  Arr3 a = (fabsf(this->w().x()) > 0.9f) ? Arr3(0.0f, 1.0f, 0.0f) : Arr3(1.0f, 0.0f, 0.0f);
   this->axis[1] = Arr3::cross(this->w(), a).unitVector();
   this->axis[0] = Arr3::cross(this->w(), this->v());
 }

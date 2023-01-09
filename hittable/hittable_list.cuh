@@ -1,6 +1,7 @@
 #pragma once
 
 #include "hittable.cuh"
+#include "helper/helper.cuh"
 
 class HittableList : public Hittable {
   public:
@@ -10,6 +11,9 @@ class HittableList : public Hittable {
     __host__ __device__ virtual bool hit(const Ray &r, float t_min, float t_max, HitRecord *rec, MaterialRecord *mat) const override;
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *outputBox) override;
+
+    __host__ __device__ virtual float pdfValue(const Arr3 &origin, const Arr3 &direction) const override;
+    __device__ virtual Arr3 random(const Arr3 &origin, curandState* randState) const override;
 
   private:
     Hittable **objects;
@@ -71,4 +75,21 @@ float HittableList::numCompare(int index) const {
   }
 
   return minNum;
+}
+
+__host__ __device__ 
+float HittableList::pdfValue(const Arr3 &origin, const Arr3 &direction) const {
+  auto weight = 1.0f / this->n;
+  auto sum = 0.0f;
+
+  for (int i = 0; i < this->n; i++) {
+    sum += weight * this->objects[i]->pdfValue(origin, direction);
+  }
+
+  return sum;
+}
+
+__device__ 
+Arr3 HittableList::random(const Arr3 &origin, curandState* randState) const {
+  return this->objects[randInt(0, this->n - 1, randState)]->random(origin, randState);
 }

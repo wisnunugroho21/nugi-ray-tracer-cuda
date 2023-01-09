@@ -14,7 +14,7 @@ class XZRect : public Hittable {
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
-    __host__ __device__ virtual float pdfValue(const Arr3 &origin, const Arr3 &v) const override;
+    __host__ __device__ virtual float pdfValue(const Arr3 &origin, const Arr3 &direction) const override;
     __device__ virtual Arr3 random(const Arr3 &origin, curandState* randState) const override;
 
   private:
@@ -66,16 +66,16 @@ bool XZRect::boundingBox(BoundingRecord *box) {
 }
 
 __host__ __device__ 
-float XZRect::pdfValue(const Arr3 &origin, const Arr3 &v) const {
+float XZRect::pdfValue(const Arr3 &origin, const Arr3 &direction) const {
   HitRecord hit;
   MaterialRecord mat;
-  if (!this->hit(Ray(origin, v), 0.001, FLT_MAX, &hit, &mat)) {
+  if (!this->hit(Ray(origin, direction), 0.001, FLT_MAX, &hit, &mat)) {
     return 0;
   } 
 
   auto area = (this->x1 - this->x0) * (this->z1 - this->z0);
-  auto distanceSquared = hit.t * hit.t * v.lengthSquared();
-  auto cosine = fabsf(Arr3::dot(v, hit.faceNormal.normal) / v.length());
+  auto distanceSquared = hit.t * hit.t * direction.lengthSquared();
+  auto cosine = fabsf(Arr3::dot(direction, hit.faceNormal.normal) / direction.length());
 
   return distanceSquared / (cosine * area);
 }
