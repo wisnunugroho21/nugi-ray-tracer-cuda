@@ -3,6 +3,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "library/stb_image.h"
 
+__host__
 unsigned char* loadImageToCUDA(const char *filename, int *width, int *height) {
   int components_per_pixel = 3;
 

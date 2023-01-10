@@ -13,6 +13,8 @@ class Box : public Hittable {
     __host__ __device__ Box(Arr3 minBoxPoint, Arr3 maxBoxPoint, Material *material);
 
     __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const override;
+    __host__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const override;
+
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
@@ -46,6 +48,11 @@ Box::Box(Arr3 minBoxPoint, Arr3 maxBoxPoint, Material *material) {
 __device__ 
 bool Box::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const {
   return this->sides->hit(r, tMin, tMax, hit, mat, randState);
+}
+
+__host__ 
+bool Box::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const {
+  return this->sides->hit(r, tMin, tMax, hit, mat);
 }
 
 __host__ __device__ 

@@ -12,6 +12,7 @@ public:
     float focusDist, float time0 = 0.0f, float time1 = 0.0f);
 	
   __device__ Ray transform(float xScreen, float yScreen, curandState* randState);
+  __host__ Ray transform(float xScreen, float yScreen);
 
   private:
 	Arr3 origin;
@@ -55,5 +56,17 @@ Ray Camera::transform(float xScreen, float yScreen, curandState* randState) {
 		this->origin + offset, 
 		this->lowerLeftCorner + xScreen * this->horizontal + yScreen * this->vertical - this->origin - offset,
     randomFloat(this->time0, this->time1, randState)
+	);
+}
+
+__host__ 
+Ray Camera::transform(float xScreen, float yScreen) {
+  Arr3 radius = this->lensRadius * Arr3::randomInUnitDisk();
+	Arr3 offset = this->u * radius.x() + this->v * radius.y();
+
+	return Ray(
+		this->origin + offset, 
+		this->lowerLeftCorner + xScreen * this->horizontal + yScreen * this->vertical - this->origin - offset,
+    randomFloat(this->time0, this->time1)
 	);
 }

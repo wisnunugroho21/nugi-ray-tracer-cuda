@@ -6,6 +6,8 @@
 class Perlin {
   public:
     __device__ Perlin(curandState *randState);
+    __host__ Perlin();
+
     __host__ __device__~Perlin();
 
     __host__ __device__ float noise(const Arr3 &point) const;
@@ -18,6 +20,10 @@ class Perlin {
 
     __device__ static int* perlinGeneratePerm(curandState *randState);
     __device__ static void permute(int *p, int n, curandState *randState);
+
+    __host__ static int* perlinGeneratePerm();
+    __host__ static void permute(int *p, int n);
+
     __host__ __device__ static float trilinearInterp(float c[2][2][2], float u, float v, float w);
     __host__ __device__ static float perlinInterp(Arr3 c[2][2][2], float u, float v, float w);
 };
@@ -32,6 +38,18 @@ Perlin::Perlin(curandState *randState) {
   this->permX = perlinGeneratePerm(randState);
   this->permY = perlinGeneratePerm(randState);
   this->permZ = perlinGeneratePerm(randState);
+}
+
+__host__
+Perlin::Perlin() {
+  this->randvec = new Arr3[Perlin::pointCount];
+  for (int i = 0; i < Perlin::pointCount; i++) {
+    this->randvec[i] = Arr3::random(-1, 1).unitVector();
+  }
+
+  this->permX = perlinGeneratePerm();
+  this->permY = perlinGeneratePerm();
+  this->permZ = perlinGeneratePerm();
 }
 
 __host__ __device__
@@ -101,6 +119,29 @@ __device__
 void Perlin::permute(int *p, int n, curandState *randState) {
   for (int i = n - 1; i > 0; i--) {
     int target = randInt(0, i, randState);
+    int temp = p[i];
+    p[i] = p[target];
+    p[target] = temp;
+  }
+}
+
+__host__
+int* Perlin::perlinGeneratePerm() {
+  auto p = new int[Perlin::pointCount];
+
+  for (int i = 0; i < Perlin::pointCount; i++) {
+    p[i] = i;
+  }
+
+  permute(p, Perlin::pointCount);
+
+  return p;
+}
+
+__host__
+void Perlin::permute(int *p, int n) {
+  for (int i = n - 1; i > 0; i--) {
+    int target = randInt(0, i);
     int temp = p[i];
     p[i] = p[target];
     p[target] = temp;

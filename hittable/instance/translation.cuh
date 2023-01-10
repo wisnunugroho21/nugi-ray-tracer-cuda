@@ -7,6 +7,8 @@ class Translation : public Hittable {
     __host__ __device__ Translation(Hittable *object, const Arr3 &offset) : object{object}, offset{offset} {}
     
     __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const override;
+    __host__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const override;
+
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
@@ -20,6 +22,20 @@ bool Translation::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Mate
   Ray movedRay(r.origin() - this->offset, r.direction(), r.time());
 
   if (!this->object->hit(movedRay, tMin, tMax, hit, mat, randState)) {
+    return false;
+  }
+
+  hit->point += this->offset;
+  hit->faceNormal = FaceNormal(movedRay, hit->faceNormal.normal);
+
+  return true;
+}
+
+__host__ 
+bool Translation::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const {
+  Ray movedRay(r.origin() - this->offset, r.direction(), r.time());
+
+  if (!this->object->hit(movedRay, tMin, tMax, hit, mat)) {
     return false;
   }
 
