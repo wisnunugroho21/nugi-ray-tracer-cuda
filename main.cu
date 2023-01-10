@@ -178,8 +178,8 @@ void randomScenes(Camera **cam, Hittable **hits, Material **mats, Hittable **wor
 
 	int objIndex = 1;
 
-	for (int a = -11; a < 11; a++) {
-		for (int b = -11; b < 11; b++) {
+	for (int a = -7; a < 7; a++) {
+		for (int b = -7; b < 7; b++) {
 			auto choose_mat = randomFloat(&localRandState);
 			Arr3 center(a + 0.9f * randomFloat(&localRandState), 0.2f, b + 0.9f * randomFloat(&localRandState));
 
@@ -400,7 +400,7 @@ int main() {
 
   switch (scene){
     case 1:
-      numObjects = 22 * 22 + 3 + 1; break;
+      numObjects = 7 * 7 + 3 + 1; break;
   
     case 2:
       numObjects = 2; break;
