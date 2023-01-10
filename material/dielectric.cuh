@@ -20,7 +20,7 @@ bool Dielectric::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *sc
 	float refractionRatio = hit.faceNormal.frontFace ? (1.0f / this->indexRefraction) : this->indexRefraction;
 
 	Arr3 unitDirection = ray.direction().unitVector();
-	float cosTheta = fmin(Arr3::dot(-unitDirection, hit.faceNormal.normal), 1.0f);
+	float cosTheta = fminf(Arr3::dot(-unitDirection, hit.faceNormal.normal), 1.0f);
 	float sinTheta = sqrtf(1.0f - cosTheta * cosTheta);
 
 	bool cannotRefract = refractionRatio * sinTheta > 1.0f;
@@ -43,7 +43,7 @@ bool Dielectric::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *sc
 	float refractionRatio = hit.faceNormal.frontFace ? (1.0f / this->indexRefraction) : this->indexRefraction;
 
 	Arr3 unitDirection = ray.direction().unitVector();
-	float cosTheta = fmin(Arr3::dot(-unitDirection, hit.faceNormal.normal), 1.0f);
+	float cosTheta = fminf(Arr3::dot(-unitDirection, hit.faceNormal.normal), 1.0f);
 	float sinTheta = sqrtf(1.0f - cosTheta * cosTheta);
 
 	bool cannotRefract = refractionRatio * sinTheta > 1.0f;
