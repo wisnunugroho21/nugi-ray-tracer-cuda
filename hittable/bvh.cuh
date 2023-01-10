@@ -28,7 +28,7 @@ class BvhNode :public Hittable {
     __host__ __device__ BvhNode() {}
     __host__ __device__ BvhNode(Hittable **objects, int n) : objects{objects}, nObjects{n} {}
 
-    __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *rec, MaterialRecord *mat) const override;
+    __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *rec, MaterialRecord *mat, curandState* randState) const override;
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
@@ -61,14 +61,14 @@ class BvhNode :public Hittable {
       AABB nodeBox;
 };
 
-__host__ __device__ 
-bool BvhNode::hit(const Ray &r, float tMin, float tMax, HitRecord *rec, MaterialRecord *mat) const {
+__device__ 
+bool BvhNode::hit(const Ray &r, float tMin, float tMax, HitRecord *rec, MaterialRecord *mat, curandState* randState) const {
   if (!this->nodeBox.hit(r, tMin, tMax)) {
     return false;
   }
 
-  bool hitLeft = this->leftObject->hit(r, tMin, tMax, rec, mat);
-  bool hitRight = this->rightObject->hit(r, tMin, hitLeft ? rec->t : tMax, rec, mat);
+  bool hitLeft = this->leftObject->hit(r, tMin, tMax, rec, mat, randState);
+  bool hitRight = this->rightObject->hit(r, tMin, hitLeft ? rec->t : tMax, rec, mat, randState);
 
   return hitLeft || hitRight;
 }

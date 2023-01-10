@@ -7,7 +7,7 @@ class RotationY : public Hittable {
   public:
     __host__ __device__ RotationY(Hittable *object, float angle);
 
-    __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const override;
+    __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const override;
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
@@ -52,8 +52,8 @@ RotationY::RotationY(Hittable *object, float angle) : object{object} {
   this->box = AABB(min, max);
 }
 
-__host__ __device__ 
-bool RotationY::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const {
+__device__ 
+bool RotationY::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const {
   auto origin = r.origin();
   auto direction = r.direction();
 
@@ -65,7 +65,7 @@ bool RotationY::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Materi
 
   Ray rotatedRay(origin, direction, r.time());
 
-  if (!this->object->hit(rotatedRay, tMin, tMax, hit, mat)) {
+  if (!this->object->hit(rotatedRay, tMin, tMax, hit, mat, randState)) {
     return false;
   }
 

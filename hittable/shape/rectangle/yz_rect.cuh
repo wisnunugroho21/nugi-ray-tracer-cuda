@@ -8,7 +8,7 @@ class YZRect : public Hittable {
     __host__ __device__ YZRect() {}
     __host__ __device__ YZRect(float y0, float y1, float z0, float z1, float k, Material *material) : y0{y0}, y1{y1}, z0{z0}, z1{z1}, k{k}, material{material} {}
 
-    __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const override;
+    __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const override;
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
@@ -17,8 +17,8 @@ class YZRect : public Hittable {
     Material *material;
 };
 
-__host__ __device__ 
-bool YZRect::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const {
+__device__ 
+bool YZRect::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const {
   auto t = (k - r.origin().x()) / r.direction().x();
   if (t < tMin || t > tMax) {
     return false;

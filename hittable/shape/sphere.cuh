@@ -7,7 +7,7 @@ class Sphere : public Hittable {
   public:
     __host__ __device__ Sphere(Arr3 center, float radius, Material *material) : center{center}, radius{radius}, material{material} {}
 
-    __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const override;
+    __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const override;
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
@@ -19,8 +19,8 @@ class Sphere : public Hittable {
     Material *material;
 };
 
-__host__ __device__
-bool Sphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const { 
+__device__
+bool Sphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const { 
 	Arr3 oc = r.origin() - this->center;
 
 	auto a = r.direction().lengthSquared();

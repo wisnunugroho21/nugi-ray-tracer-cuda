@@ -7,7 +7,7 @@
 
 class Hittable {
   public:
-    __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *rec, MaterialRecord *mat) const = 0;
+    __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *rec, MaterialRecord *mat, curandState* randState) const = 0;
     __host__ __device__ virtual float numCompare(int index) const = 0;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) = 0;
 };

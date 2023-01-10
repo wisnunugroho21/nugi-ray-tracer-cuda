@@ -7,7 +7,7 @@ class HittableList : public Hittable {
     __host__ __device__ HittableList() {}
     __host__ __device__ HittableList(Hittable **objects, int n) : objects{objects}, n{n} {}
 
-    __host__ __device__ virtual bool hit(const Ray &r, float t_min, float t_max, HitRecord *rec, MaterialRecord *mat) const override;
+    __device__ virtual bool hit(const Ray &r, float t_min, float t_max, HitRecord *rec, MaterialRecord *mat, curandState* randState) const override;
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *outputBox) override;
 
@@ -16,8 +16,8 @@ class HittableList : public Hittable {
     int n;
 };
 
-__host__ __device__
-bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const {
+__device__
+bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const {
   MaterialRecord tempMat;
   HitRecord tempHit;
 
@@ -25,7 +25,7 @@ bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Mat
   float tClosest = tMax;
 
   for (int i = 0; i < this->n; i++) {
-    if (this->objects[i]->hit(r, tMin, tClosest, &tempHit, &tempMat)) {
+    if (this->objects[i]->hit(r, tMin, tClosest, &tempHit, &tempMat, randState)) {
       isHitAnything = true;
       tClosest = tempHit.t;
 

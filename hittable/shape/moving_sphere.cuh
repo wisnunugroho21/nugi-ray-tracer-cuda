@@ -10,7 +10,7 @@ class MovingSphere : public Hittable {
     : center0{center0}, center1{center1}, time0{time0}, time1{time1}, radius{radius}, material{material} 
     {}
 
-    __host__ __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const override;
+    __device__ virtual bool hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const override;
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
 
@@ -23,8 +23,8 @@ class MovingSphere : public Hittable {
     Material *material;
 };
 
-__host__ __device__
-bool MovingSphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const { 
+__device__
+bool MovingSphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const { 
 	Arr3 oc = r.origin() - this->center(r.time());
 
 	auto a = r.direction().lengthSquared();

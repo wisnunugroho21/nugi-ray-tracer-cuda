@@ -19,6 +19,8 @@
 #include "hittable/instance/translation.cuh"
 #include "helper/image_loader.cuh"
 #include "texture/image.cuh"
+#include "hittable/medium/constant_medium.cuh"
+#include "material/isotropic.cuh"
 
 #include <iostream>
 #include <fstream>
@@ -61,7 +63,7 @@ Arr3 tracing(const Ray &r, Hittable** world, const Arr3 &background, curandState
   );
 
 	for (int i = 0; i < 50; i++) {
-    if (!world[0]->hit(curRay, 0.001f, FLT_MAX, &hit, &mat)) {
+    if (!world[0]->hit(curRay, 0.001f, FLT_MAX, &hit, &mat, randState)) {
       lastNum = Arr4(background.x(), background.y(), background.z(), 1.0f);
       break;
     }
@@ -324,10 +326,13 @@ __global__
 void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState, Arr3 *background) {
   auto localRandState = randState[0];
 
+  texts[0] = new Solid(Arr3(1.0f, 1.0f, 1.0f));
+
   mats[0] = new Lambertian(Arr3(0.65f, 0.05f, 0.05f));
   mats[1] = new Lambertian(Arr3(0.73f, 0.73f, 0.73f));
   mats[2] = new Lambertian(Arr3(0.12f, 0.45f, 0.15f));
   mats[3] = new DiffuseLight(Arr3(15.0f, 15.0f, 15.0f));
+  mats[4] = new Isotropic(texts[0]);
 
   hits[0] = new YZRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[2]);
   hits[1] = new YZRect(0.0f, 555.0f, 0.0f, 555.0f, 0.0f, mats[0]);
@@ -341,8 +346,9 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
   hits[6] = new Translation(hits[9], Arr3(265.0f, 0.0f, 295.0f));
 
   hits[10] = new Box(Arr3(0.0f, 0.0f, 0.0f), Arr3(165.0f, 165.0f, 165.0f), mats[1]);
-  hits[11] = new RotationY(hits[10], -18.0f);
-  hits[7] = new Translation(hits[11], Arr3(130.0f, 0.0f, 65.0f));
+  hits[11] = new ConstantMedium(hits[10], 0.01f, mats[4]);
+  hits[12] = new RotationY(hits[11], -18.0f);
+  hits[7] = new Translation(hits[12], Arr3(130.0f, 0.0f, 65.0f)); 
 
   world[0] = BvhNode::build(hits, 8, &localRandState);
 
@@ -358,7 +364,7 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
 }
 
 int main() {
-  int scene = 6;
+  int scene = 5;
 
 	const int imageWidth = 1024;
 	const int imageHeight = 1024;
@@ -407,7 +413,7 @@ int main() {
       numObjects = 3; break;
 
     case 5:
-      numObjects = 12; break;
+      numObjects = 15; break;
 
     case 6:
       numObjects = 1; break;
