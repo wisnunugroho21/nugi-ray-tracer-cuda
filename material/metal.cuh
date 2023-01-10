@@ -22,7 +22,7 @@ bool Metal::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scatter
 	scattered->newRay = Ray(hit.point, reflected + this->fuzziness * Arr3::randomInUnitSphere(randState), ray.time());
 	scattered->colorAttenuation = this->colorAlbedo;
 
-	return Arr3::dot(scattered->newRay.direction(), hit.faceNormal.normal) > 0;
+	return Arr3::dot(scattered->newRay.direction(), hit.faceNormal.normal) > 0.0f;
 }
 
 __host__
@@ -31,5 +31,5 @@ bool Metal::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scatter
 	scattered->newRay = Ray(hit.point, reflected + this->fuzziness * Arr3::randomInUnitSphere(), ray.time());
 	scattered->colorAttenuation = this->colorAlbedo;
 
-	return Arr3::dot(scattered->newRay.direction(), hit.faceNormal.normal) > 0;
+	return Arr3::dot(scattered->newRay.direction(), hit.faceNormal.normal) > 0.0f;
 }

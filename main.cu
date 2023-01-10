@@ -109,8 +109,8 @@ void render(Arr3 *frameBuffer, int width, int height, int nSample, Arr3 *backgro
 	Arr3 color(0.0f, 0.0f, 0.0f);
 	auto localRandState = randState[pixelIndex];
 
-	auto u = float(i + randomFloat(&localRandState)) / (width - 1);
-	auto v = float(j + randomFloat(&localRandState)) / (height - 1);
+	auto u = float(i + randomFloat(&localRandState)) / (width - 1.0f);
+	auto v = float(j + randomFloat(&localRandState)) / (height - 1.0f);
 
 	Ray r = cam[0]->transform(u, v, &localRandState);
 	color += tracing(r, world, background[0], &localRandState);
