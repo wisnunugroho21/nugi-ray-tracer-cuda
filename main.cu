@@ -18,6 +18,7 @@
 #include "hittable/instance/rotationY.cuh"
 #include "hittable/instance/translation.cuh"
 #include "helper/image_loader.cuh"
+#include "texture/image.cuh"
 
 #include <iostream>
 #include <fstream>
@@ -298,6 +299,28 @@ void twoPerlinSpheres(Camera **cam, Hittable **hits, Material **mats, Hittable *
 }
 
 __global__
+void earth(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, unsigned char* imageData, int width, int height, curandState *randState, Arr3 *background) {
+  auto localRandState = randState[0];
+
+  texts[0] = new Image(imageData, width, height);
+  mats[0] = new Lambertian(texts[0]);
+
+  hits[0] = new Sphere(Arr3(0.0f, 0.0f, 0.0f), 2.0f, mats[0]);
+
+  world[0] = BvhNode::build(hits, 1, &localRandState);
+
+  Arr3 lookfrom(13.0f, 2.0f, 3.0f);
+	Arr3 lookat(0.0f, 0.0f, 0.0f);
+	Arr3 vup(0.0f, 1.0f, 0.0f);
+	auto dist_to_focus = 10.0f;
+	auto aperture = 0.1f;
+	auto aspect_ratio = 1.0f;
+
+	cam[0] = new Camera(lookfrom, lookat, vup, 40.0f, aspect_ratio, aperture, dist_to_focus);
+  background[0] = Arr3(0.7f, 0.8f, 1.0f);
+}
+
+__global__
 void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, curandState *randState, Arr3 *background) {
   auto localRandState = randState[0];
 
@@ -335,7 +358,7 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
 }
 
 int main() {
-  int scene = 1;
+  int scene = 6;
 
 	const int imageWidth = 1024;
 	const int imageHeight = 1024;
@@ -385,13 +408,16 @@ int main() {
 
     case 5:
       numObjects = 12; break;
+
+    case 6:
+      numObjects = 1; break;
   }
 
 	checkCudaErrors(cudaMalloc((void**)&camera, sizeof(Camera*)));
 	checkCudaErrors(cudaMalloc((void**)&hits, numObjects * sizeof(Hittable*)));
 	checkCudaErrors(cudaMalloc((void**)&mats, numObjects * sizeof(Material*)));
 	checkCudaErrors(cudaMalloc((void**)&world, sizeof(Hittable*)));
-  checkCudaErrors(cudaMalloc((void**)&texts, 1 * sizeof(Texture*)));
+  checkCudaErrors(cudaMalloc((void**)&texts, numObjects * sizeof(Texture*)));
 
 	initGlobalRand<<<1, 1>>>(globalRandState);
 	checkCudaErrors(cudaGetLastError());
@@ -418,6 +444,12 @@ int main() {
 
     case 5:
       cornellBox<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
+      break;
+
+    case 6:
+      int width, height;
+      auto data = loadImageToCUDA("earthmap.jpg", &width, &height);
+      earth<<<1, 1>>>(camera, hits, mats, world, texts, data, width, height, globalRandState, background);
       break;
   }
 	
