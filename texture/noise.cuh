@@ -8,8 +8,8 @@ class Noise : public Texture {
     __device__ Noise(curandState *randState) : perlin{Perlin(randState)} {}
     __device__ Noise(curandState *randState, float scale) : perlin{Perlin(randState)}, scale{scale} {}
 
-    __host__ Noise(curandState *randState) : perlin{Perlin()} {}
-    __host__ Noise(curandState *randState, float scale) : perlin{Perlin()}, scale{scale} {}
+    __host__ Noise() : perlin{Perlin()} {}
+    __host__ Noise(float scale) : perlin{Perlin()}, scale{scale} {}
 
     __host__ __device__ virtual Arr3 map(float u, float v, const Arr3 &point) const override;
 

@@ -6,7 +6,7 @@ class Checker : public Texture {
   public:
     __host__ __device__ Checker() {}
     __host__ __device__ Checker(Texture* even, Texture* odd) : even{even}, odd{odd} {}
-    __host__ __device__ Checker(Arr3 evenColor, Arr3 oddColor) : even{new Solid(evenColor)}, odd{new Solid{oddColor}} {}
+    __host__ __device__ Checker(const Arr3 &evenColor, const Arr3 &oddColor) : even{new Solid(evenColor)}, odd{new Solid{oddColor}} {}
 
   __host__ __device__ virtual Arr3 map(float u, float v, const Arr3 &point) const override;
 
