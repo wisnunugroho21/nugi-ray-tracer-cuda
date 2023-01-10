@@ -63,8 +63,8 @@ bool Dielectric::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *sc
 
 __host__ __device__
 float Dielectric::reflactance(float cosine, float refIdx) {
-	auto r0 = (1.0f - refIdx) / (1 + refIdx);
+	auto r0 = (1.0f - refIdx) / (1.0f + refIdx);
 	r0 = r0 * r0;
 
-	return r0 + (1.0f - r0) * powf((1 - cosine), 5.0f);
+	return r0 + (1.0f - r0) * powf((1.0f - cosine), 5.0f);
 }

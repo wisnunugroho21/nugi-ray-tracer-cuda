@@ -87,9 +87,9 @@ bool HittableList::boundingBox(BoundingRecord *outputBox) {
 
 __host__ __device__ 
 float HittableList::numCompare(int index) const {
-  if (this->objects == NULL || this->n == 0) return -99;
+  if (this->objects == NULL || this->n == 0) return -9999.0f;
 
-  float minNum = 99;
+  float minNum = 9999.0f;
 
   for (int i = 0; i < this->n; i++) {
     if (this->objects[i]->numCompare(index) < minNum) {
