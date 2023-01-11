@@ -32,8 +32,10 @@ bool Dielectric::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *sc
 		direction = Arr3::refract(unitDirection, hit.faceNormal.normal, refractionRatio);
 	}	
 
-	scattered->colorAttenuation = Arr3(1.0f, 1.0f, 1.0f);
-	scattered->newRay = Ray(hit.point, direction, ray.time());
+	if (scattered != nullptr && scattered != NULL) {
+    scattered->colorAttenuation = Arr3(1.0f, 1.0f, 1.0f);
+	  scattered->newRay = Ray(hit.point, direction, ray.time());
+  }
 
 	return true;
 }
@@ -53,10 +55,12 @@ bool Dielectric::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *sc
 		direction = Arr3::reflect(unitDirection, hit.faceNormal.normal);
 	} else {
 		direction = Arr3::refract(unitDirection, hit.faceNormal.normal, refractionRatio);
-	}	
+	}
 
-	scattered->colorAttenuation = Arr3(1.0f, 1.0f, 1.0f);
-	scattered->newRay = Ray(hit.point, direction, ray.time());
+  if (scattered != nullptr && scattered != NULL) {
+    scattered->colorAttenuation = Arr3(1.0f, 1.0f, 1.0f);
+	  scattered->newRay = Ray(hit.point, direction, ray.time());
+  }
 
 	return true;
 }

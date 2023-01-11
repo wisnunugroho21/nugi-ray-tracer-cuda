@@ -72,17 +72,19 @@ bool RotationY::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Materi
     return false;
   }
 
-  auto p = hit->point;
-  auto normal = hit->faceNormal.normal;
+  if (hit != nullptr && hit != NULL) {
+    auto p = hit->point;
+    auto normal = hit->faceNormal.normal;
 
-  p[0] =  this->cosTheta * hit->point[0] + this->sinTheta * hit->point[2];
-  p[2] = -1.0f * this->sinTheta * hit->point[0] + this->cosTheta * hit->point[2];
+    p[0] =  this->cosTheta * hit->point[0] + this->sinTheta * hit->point[2];
+    p[2] = -1.0f * this->sinTheta * hit->point[0] + this->cosTheta * hit->point[2];
 
-  normal[0] =  this->cosTheta * hit->faceNormal.normal[0] + this->sinTheta * hit->faceNormal.normal[2];
-  normal[2] = -1.0f * this->sinTheta * hit->faceNormal.normal[0] + this->cosTheta * hit->faceNormal.normal[2];
+    normal[0] =  this->cosTheta * hit->faceNormal.normal[0] + this->sinTheta * hit->faceNormal.normal[2];
+    normal[2] = -1.0f * this->sinTheta * hit->faceNormal.normal[0] + this->cosTheta * hit->faceNormal.normal[2];
 
-  hit->point = p;
-  hit->faceNormal = FaceNormal(rotatedRay, normal);
+    hit->point = p;
+    hit->faceNormal = FaceNormal(rotatedRay, normal);
+  }
 
   return true;
 }
@@ -104,17 +106,19 @@ bool RotationY::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Materi
     return false;
   }
 
-  auto p = hit->point;
-  auto normal = hit->faceNormal.normal;
+  if (hit != nullptr && hit != NULL) {
+    auto p = hit->point;
+    auto normal = hit->faceNormal.normal;
 
-  p[0] =  this->cosTheta * hit->point[0] + this->sinTheta * hit->point[2];
-  p[2] = -1.0f * this->sinTheta * hit->point[0] + this->cosTheta * hit->point[2];
+    p[0] =  this->cosTheta * hit->point[0] + this->sinTheta * hit->point[2];
+    p[2] = -1.0f * this->sinTheta * hit->point[0] + this->cosTheta * hit->point[2];
 
-  normal[0] =  this->cosTheta * hit->faceNormal.normal[0] + this->sinTheta * hit->faceNormal.normal[2];
-  normal[2] = -1.0f * this->sinTheta * hit->faceNormal.normal[0] + this->cosTheta * hit->faceNormal.normal[2];
+    normal[0] =  this->cosTheta * hit->faceNormal.normal[0] + this->sinTheta * hit->faceNormal.normal[2];
+    normal[2] = -1.0f * this->sinTheta * hit->faceNormal.normal[0] + this->cosTheta * hit->faceNormal.normal[2];
 
-  hit->point = p;
-  hit->faceNormal = FaceNormal(rotatedRay, normal);
+    hit->point = p;
+    hit->faceNormal = FaceNormal(rotatedRay, normal);
+  }
 
   return true;
 }
@@ -124,7 +128,11 @@ float RotationY::numCompare(int index) const {
   return this->box.minimum().get(index);
 }
 
-__host__ __device__ bool RotationY::boundingBox(BoundingRecord *box) {
-  box->boundingBox = this->box;
+__host__ __device__ 
+bool RotationY::boundingBox(BoundingRecord *box) {
+  if (box != nullptr && box != NULL) {
+    box->boundingBox = this->box;
+  }
+  
   return this->hasBox;
 }

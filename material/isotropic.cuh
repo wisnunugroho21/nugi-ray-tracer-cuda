@@ -17,16 +17,20 @@ class Isotropic :public Material {
 
 __device__ 
 bool Isotropic::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const {
-  scattered->newRay = Ray(hit.point, Arr3::randomInUnitSphere(randState), ray.time());
-  scattered->colorAttenuation = this->texture->map(hit.textCoord.u, hit.textCoord.v, hit.point);
+  if (scattered != nullptr && scattered != NULL) {
+    scattered->newRay = Ray(hit.point, Arr3::randomInUnitSphere(randState), ray.time());
+    scattered->colorAttenuation = this->texture->map(hit.textCoord.u, hit.textCoord.v, hit.point);
+  }
 
   return true;
 }
 
 __host__ 
 bool Isotropic::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered) const {
-  scattered->newRay = Ray(hit.point, Arr3::randomInUnitSphere(), ray.time());
-  scattered->colorAttenuation = this->texture->map(hit.textCoord.u, hit.textCoord.v, hit.point);
+  if (scattered != nullptr && scattered != NULL) {
+    scattered->newRay = Ray(hit.point, Arr3::randomInUnitSphere(), ray.time());
+    scattered->colorAttenuation = this->texture->map(hit.textCoord.u, hit.textCoord.v, hit.point);
+  }
 
   return true;
 }

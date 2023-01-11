@@ -42,14 +42,19 @@ bool Sphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialR
 		}
 	}
 
-	hit->t = root;
-	hit->point = r.at(root);
+  if (hit != nullptr && hit != NULL) {
+    hit->t = root;
+    hit->point = r.at(root);
 
-	Arr3 outwardNormal = (hit->point - this->center) / this->radius;
-	hit->faceNormal = FaceNormal(r, outwardNormal);
+    Arr3 outwardNormal = (hit->point - this->center) / this->radius;
+    hit->faceNormal = FaceNormal(r, outwardNormal);
 
-  hit->textCoord = Sphere::getUV(outwardNormal);
-	mat->material = this->material;
+    hit->textCoord = Sphere::getUV(outwardNormal);
+  }
+
+  if (mat != nullptr && mat != NULL) {
+    mat->material = this->material;
+  }
 
 	return true;
 }
@@ -75,24 +80,31 @@ bool Sphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialR
 		}
 	}
 
-	hit->t = root;
-	hit->point = r.at(root);
+	if (hit != nullptr && hit != NULL) {
+    hit->t = root;
+    hit->point = r.at(root);
 
-	Arr3 outwardNormal = (hit->point - this->center) / this->radius;
-	hit->faceNormal = FaceNormal(r, outwardNormal);
+    Arr3 outwardNormal = (hit->point - this->center) / this->radius;
+    hit->faceNormal = FaceNormal(r, outwardNormal);
 
-  hit->textCoord = Sphere::getUV(outwardNormal);
-	mat->material = this->material;
+    hit->textCoord = Sphere::getUV(outwardNormal);
+  }
+
+  if (mat != nullptr && mat != NULL) {
+    mat->material = this->material;
+  }
 
 	return true;
 }
 
 __host__ __device__
 bool Sphere::boundingBox(BoundingRecord *box) {
-  box->boundingBox = AABB(
-    this->center - Arr3(this->radius, this->radius, this->radius),
-    this->center + Arr3(this->radius, this->radius, this->radius)
-  );
+  if (box != nullptr && box != NULL) {
+    box->boundingBox = AABB(
+      this->center - Arr3(this->radius, this->radius, this->radius),
+      this->center + Arr3(this->radius, this->radius, this->radius)
+    );
+  }
 
   return true;
 }

@@ -46,13 +46,18 @@ bool MovingSphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Mat
 		}
 	}
 
-	hit->t = root;
-	hit->point = r.at(root);
+  if (hit != nullptr && hit != NULL) {
+    hit->t = root;
+    hit->point = r.at(root);
 
-	Arr3 outwardNormal = (hit->point - this->center(r.time())) / this->radius;
-	hit->faceNormal = FaceNormal(r, outwardNormal);
+    Arr3 outwardNormal = (hit->point - this->center(r.time())) / this->radius;
+    hit->faceNormal = FaceNormal(r, outwardNormal);
+  }
 
-	mat->material = this->material;
+  if (mat != nullptr && mat != NULL) {
+    mat->material = this->material;
+  }
+	
 	return true;
 }
 
@@ -77,29 +82,37 @@ bool MovingSphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Mat
 		}
 	}
 
-	hit->t = root;
-	hit->point = r.at(root);
+	if (hit != nullptr && hit != NULL) {
+    hit->t = root;
+    hit->point = r.at(root);
 
-	Arr3 outwardNormal = (hit->point - this->center(r.time())) / this->radius;
-	hit->faceNormal = FaceNormal(r, outwardNormal);
+    Arr3 outwardNormal = (hit->point - this->center(r.time())) / this->radius;
+    hit->faceNormal = FaceNormal(r, outwardNormal);
+  }
 
-	mat->material = this->material;
+  if (mat != nullptr && mat != NULL) {
+    mat->material = this->material;
+  }
+
 	return true;
 }
 
 __host__ __device__
 bool MovingSphere::boundingBox(BoundingRecord *box) {
-  AABB box0(
-    this->center(this->time0) - Arr3(this->radius, this->radius, this->radius),
-    this->center(this->time0) + Arr3(this->radius, this->radius, this->radius)
-  );
+  if (box != nullptr && box != NULL) {
+    AABB box0(
+      this->center(this->time0) - Arr3(this->radius, this->radius, this->radius),
+      this->center(this->time0) + Arr3(this->radius, this->radius, this->radius)
+    );
 
-  AABB box1(
-    this->center(this->time1) - Arr3(this->radius, this->radius, this->radius),
-    this->center(this->time1) + Arr3(this->radius, this->radius, this->radius)
-  );
+    AABB box1(
+      this->center(this->time1) - Arr3(this->radius, this->radius, this->radius),
+      this->center(this->time1) + Arr3(this->radius, this->radius, this->radius)
+    );
 
-  box->boundingBox = AABB::surrondingBox(box0, box1);
+    box->boundingBox = AABB::surrondingBox(box0, box1);
+  }
+  
   return true;
 }
 

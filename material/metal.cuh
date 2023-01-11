@@ -19,8 +19,11 @@ class Metal : public Material {
 __device__
 bool Metal::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const {
 	Arr3 reflected = Arr3::reflect(ray.direction().unitVector(), hit.faceNormal.normal);
-	scattered->newRay = Ray(hit.point, reflected + this->fuzziness * Arr3::randomInUnitSphere(randState), ray.time());
-	scattered->colorAttenuation = this->colorAlbedo;
+
+  if (scattered != nullptr && scattered != NULL) {
+    scattered->newRay = Ray(hit.point, reflected + this->fuzziness * Arr3::randomInUnitSphere(randState), ray.time());
+	  scattered->colorAttenuation = this->colorAlbedo;
+  }
 
 	return Arr3::dot(scattered->newRay.direction(), hit.faceNormal.normal) > 0.0f;
 }
@@ -28,8 +31,11 @@ bool Metal::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scatter
 __host__
 bool Metal::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered) const {
 	Arr3 reflected = Arr3::reflect(ray.direction().unitVector(), hit.faceNormal.normal);
-	scattered->newRay = Ray(hit.point, reflected + this->fuzziness * Arr3::randomInUnitSphere(), ray.time());
-	scattered->colorAttenuation = this->colorAlbedo;
+
+  if (scattered != nullptr && scattered != NULL) {
+    scattered->newRay = Ray(hit.point, reflected + this->fuzziness * Arr3::randomInUnitSphere(), ray.time());
+	  scattered->colorAttenuation = this->colorAlbedo;
+  }
 
 	return Arr3::dot(scattered->newRay.direction(), hit.faceNormal.normal) > 0.0f;
 }
