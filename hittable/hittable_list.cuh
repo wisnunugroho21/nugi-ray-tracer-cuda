@@ -31,12 +31,16 @@ bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Mat
       isHitAnything = true;
       tClosest = tempHit.t;
 
-      hit->textCoord = tempHit.textCoord;
-      hit->faceNormal = tempHit.faceNormal;
-      hit->point = tempHit.point;
-      hit->t = tempHit.t;
+      if (hit != nullptr && hit != NULL) {
+        hit->textCoord = tempHit.textCoord;
+        hit->faceNormal = tempHit.faceNormal;
+        hit->point = tempHit.point;
+        hit->t = tempHit.t;
+      }
 
-      mat->material = tempMat.material;
+      if (mat != nullptr && mat != NULL) {
+        mat->material = tempMat.material;
+      }
     }
   }
 
@@ -56,12 +60,16 @@ bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Mat
       isHitAnything = true;
       tClosest = tempHit.t;
 
-      hit->textCoord = tempHit.textCoord;
-      hit->faceNormal = tempHit.faceNormal;
-      hit->point = tempHit.point;
-      hit->t = tempHit.t;
+      if (hit != nullptr && hit != NULL) {
+        hit->textCoord = tempHit.textCoord;
+        hit->faceNormal = tempHit.faceNormal;
+        hit->point = tempHit.point;
+        hit->t = tempHit.t;
+      }
 
-      mat->material = tempMat.material;
+      if (mat != nullptr && mat != NULL) {
+        mat->material = tempMat.material;
+      }
     }
   }
 
@@ -77,7 +85,10 @@ bool HittableList::boundingBox(BoundingRecord *outputBox) {
 
   for (int i = 0; i < this->n; i++) {
     if (this->objects[n]->boundingBox(&tempBox)) {
-      outputBox->boundingBox = firstBox ? tempBox.boundingBox : AABB::surrondingBox(outputBox->boundingBox, tempBox.boundingBox);
+      if (outputBox != nullptr && outputBox != NULL) {
+        outputBox->boundingBox = firstBox ? tempBox.boundingBox : AABB::surrondingBox(outputBox->boundingBox, tempBox.boundingBox);
+      }
+      
       firstBox = false;
     }
   }

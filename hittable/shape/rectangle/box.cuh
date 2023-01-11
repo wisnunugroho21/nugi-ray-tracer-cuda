@@ -62,7 +62,10 @@ float Box::numCompare(int index) const {
 
 __host__ __device__ 
 bool Box::boundingBox(BoundingRecord *box) {
-  box->boundingBox = AABB(this->minBoxPoint, this->maxBoxPoint);
+  if (box != nullptr && box != NULL) {
+    box->boundingBox = AABB(this->minBoxPoint, this->maxBoxPoint);
+  }
+  
   return true;
 }
 

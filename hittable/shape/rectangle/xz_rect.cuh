@@ -33,16 +33,21 @@ bool XZRect::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialR
     return false;
   }
 
-  hit->t = t;
-  hit->point = r.at(t);
+  if (hit != nullptr && hit != NULL) {
+    hit->t = t;
+    hit->point = r.at(t);
 
-  hit->textCoord.u = (x - this->x0) / (this->x1 - this->x0);
-  hit->textCoord.v = (z - this->z0) / (this->z1 - this->z0);
+    hit->textCoord.u = (x - this->x0) / (this->x1 - this->x0);
+    hit->textCoord.v = (z - this->z0) / (this->z1 - this->z0);
 
-  auto outwardNormal = Arr3(0.0f, 1.0f, 0.0f);
-  hit->faceNormal = FaceNormal(r, outwardNormal);
+    auto outwardNormal = Arr3(0.0f, 1.0f, 0.0f);
+    hit->faceNormal = FaceNormal(r, outwardNormal);
+  }
 
-  mat->material = this->material;
+  if (mat != nullptr && mat != NULL) {
+    mat->material = this->material;
+  }
+  
   return true;
 }
 
@@ -60,16 +65,21 @@ bool XZRect::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialR
     return false;
   }
 
-  hit->t = t;
-  hit->point = r.at(t);
+  if (hit != nullptr && hit != NULL) {
+    hit->t = t;
+    hit->point = r.at(t);
 
-  hit->textCoord.u = (x - this->x0) / (this->x1 - this->x0);
-  hit->textCoord.v = (z - this->z0) / (this->z1 - this->z0);
+    hit->textCoord.u = (x - this->x0) / (this->x1 - this->x0);
+    hit->textCoord.v = (z - this->z0) / (this->z1 - this->z0);
 
-  auto outwardNormal = Arr3(0.0f, 1.0f, 0.0f);
-  hit->faceNormal = FaceNormal(r, outwardNormal);
+    auto outwardNormal = Arr3(0.0f, 1.0f, 0.0f);
+    hit->faceNormal = FaceNormal(r, outwardNormal);
+  }
 
-  mat->material = this->material;
+  if (mat != nullptr && mat != NULL) {
+    mat->material = this->material;
+  }
+
   return true;
 }
 
@@ -80,6 +90,9 @@ float XZRect::numCompare(int index) const {
 
 __host__ __device__ 
 bool XZRect::boundingBox(BoundingRecord *box) {
-  box->boundingBox = AABB(Arr3(this->x0, this->k - 0.0001f, this->z0), Arr3(this->x1, this->k + 0.0001f, this->z1));
+  if (box != nullptr && box != NULL) {
+    box->boundingBox = AABB(Arr3(this->x0, this->k - 0.0001f, this->z0), Arr3(this->x1, this->k + 0.0001f, this->z1));
+  }
+  
   return true;
 }

@@ -24,9 +24,11 @@ bool Translation::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Mate
   if (!this->object->hit(movedRay, tMin, tMax, hit, mat, randState)) {
     return false;
   }
-
-  hit->point += this->offset;
-  hit->faceNormal = FaceNormal(movedRay, hit->faceNormal.normal);
+  
+  if (hit != nullptr && hit != NULL) {
+    hit->point += this->offset;
+    hit->faceNormal = FaceNormal(movedRay, hit->faceNormal.normal);
+  }
 
   return true;
 }
@@ -39,8 +41,10 @@ bool Translation::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Mate
     return false;
   }
 
-  hit->point += this->offset;
-  hit->faceNormal = FaceNormal(movedRay, hit->faceNormal.normal);
+  if (hit != nullptr && hit != NULL) {
+    hit->point += this->offset;
+    hit->faceNormal = FaceNormal(movedRay, hit->faceNormal.normal);
+  }
 
   return true;
 }
@@ -58,10 +62,12 @@ bool Translation::boundingBox(BoundingRecord *box) {
     return false;
   }
 
-  box->boundingBox = AABB(
-    outputBox.boundingBox.minimum() + this->offset,
-    outputBox.boundingBox.maximum() + this->offset
-  );
+  if (box != nullptr && box != NULL) {
+    box->boundingBox = AABB(
+      outputBox.boundingBox.minimum() + this->offset,
+      outputBox.boundingBox.maximum() + this->offset
+    );
+  }
 
   return true;
 }

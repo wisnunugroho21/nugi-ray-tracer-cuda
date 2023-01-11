@@ -59,13 +59,18 @@ bool ConstantMedium::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, M
       return false;
     }
 
-    hit->t = hit1.t + hit_distance / rayLength;
-    hit->point = r.at(hit->t);
+    if (hit != nullptr && hit != NULL) {
+      hit->t = hit1.t + hit_distance / rayLength;
+      hit->point = r.at(hit->t);
 
-    hit->faceNormal.normal = Arr3(1.0f, 0.0f, 0.0f);
-    hit->faceNormal.frontFace = true;
+      hit->faceNormal.normal = Arr3(1.0f, 0.0f, 0.0f);
+      hit->faceNormal.frontFace = true;
+    }
 
-    mat->material = this->material;
+    if (mat != nullptr && mat != NULL) {
+      mat->material = this->material;
+    }
+    
     return true;
 }
 
@@ -102,13 +107,18 @@ bool ConstantMedium::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, M
       return false;
     }
 
-    hit->t = hit1.t + hit_distance / rayLength;
-    hit->point = r.at(hit->t);
+    if (hit != nullptr && hit != NULL) {
+      hit->t = hit1.t + hit_distance / rayLength;
+      hit->point = r.at(hit->t);
 
-    hit->faceNormal.normal = Arr3(1.0f, 0.0f, 0.0f);
-    hit->faceNormal.frontFace = true;
+      hit->faceNormal.normal = Arr3(1.0f, 0.0f, 0.0f);
+      hit->faceNormal.frontFace = true;
+    }
 
-    mat->material = this->material;
+    if (mat != nullptr && mat != NULL) {
+      mat->material = this->material;
+    }
+    
     return true;
 }
 
@@ -119,12 +129,5 @@ float ConstantMedium::numCompare(int index) const {
 
 __host__ __device__ 
 bool ConstantMedium::boundingBox(BoundingRecord *box) {
-  BoundingRecord outputBox;
-
-  if (!this->boundary->boundingBox(&outputBox)) {
-    return false;
-  }
-
-  box->boundingBox = outputBox.boundingBox;
-  return true;
+  return this->boundary->boundingBox(box);
 }
