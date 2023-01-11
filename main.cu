@@ -178,8 +178,8 @@ void randomScenes(Camera **cam, Hittable **hits, Material **mats, Hittable **wor
 
 	int objIndex = 1;
 
-	for (int a = -11; a < 11; a++) {
-		for (int b = -11; b < 11; b++) {
+	for (int a = -7; a < 7; a++) {
+		for (int b = -7; b < 7; b++) {
 			auto choose_mat = randomFloat(&localRandState);
 			Arr3 center(a + 0.9f * randomFloat(&localRandState), 0.2f, b + 0.9f * randomFloat(&localRandState));
 
@@ -346,9 +346,8 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
   hits[6] = new Translation(hits[9], Arr3(265.0f, 0.0f, 295.0f));
 
   hits[10] = new Box(Arr3(0.0f, 0.0f, 0.0f), Arr3(165.0f, 165.0f, 165.0f), mats[1]);
-  hits[11] = new ConstantMedium(hits[10], 0.01f, mats[4]);
-  hits[12] = new RotationY(hits[11], -18.0f);
-  hits[7] = new Translation(hits[12], Arr3(130.0f, 0.0f, 65.0f)); 
+  hits[11] = new RotationY(hits[10], -18.0f);
+  hits[7] = new Translation(hits[11], Arr3(130.0f, 0.0f, 65.0f)); 
 
   world[0] = BvhNode::build(hits, 8, &localRandState);
 
@@ -364,7 +363,7 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
 }
 
 int main() {
-  int scene = 5;
+  int scene = 1;
 
 	const int imageWidth = 1024;
 	const int imageHeight = 1024;
@@ -401,7 +400,7 @@ int main() {
 
   switch (scene){
     case 1:
-      numObjects = 22 * 22 + 3 + 1; break;
+      numObjects = 7 * 7 + 3 + 1; break;
   
     case 2:
       numObjects = 2; break;

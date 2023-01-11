@@ -44,7 +44,6 @@ bool Sphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialR
 
 	hit->t = root;
 	hit->point = r.at(root);
-  
 
 	Arr3 outwardNormal = (hit->point - this->center) / this->radius;
 	hit->faceNormal = FaceNormal(r, outwardNormal);
@@ -78,7 +77,6 @@ bool Sphere::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialR
 
 	hit->t = root;
 	hit->point = r.at(root);
-  
 
 	Arr3 outwardNormal = (hit->point - this->center) / this->radius;
 	hit->faceNormal = FaceNormal(r, outwardNormal);
@@ -112,7 +110,7 @@ TextureCoordinate Sphere::getUV(const Arr3 &point) {
   auto phi = atan2f(-1.0f * point.z(), point.x()) + pi;
 
   TextureCoordinate textCoord;
-  textCoord.u = phi / (2 * pi);
+  textCoord.u = phi / (2.0f * pi);
   textCoord.v = theta / pi;
 
   return textCoord;

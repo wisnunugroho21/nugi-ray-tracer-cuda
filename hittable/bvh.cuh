@@ -223,24 +223,19 @@ BvhNode* BvhNode::build(Hittable **objects, int n, curandState* randState) {
   leafNodes[nLeaf++] = root;
 
   while (isNotLeaf(leafNodes, nLeaf)) {
-    BvhNode **curNodes =  (BvhNode**) malloc(nLeaf * sizeof(BvhNode*));
-    int nCurNodes = 0;
-
-    for (int i = 0; i < nLeaf; i++) {
-      curNodes[nCurNodes++] = leafNodes[i];
-    }
+    int nCurNodes = nLeaf;
 
     for (int i = 0; i < nCurNodes; i++) {
-      if (curNodes[i]->getNumList() > 2) {
-        BvhNode *leftNode = (BvhNode*) curNodes[i]->getLeft();
-        BvhNode *rightNode = (BvhNode*) curNodes[i]->getRight();
+      if (leafNodes[0]->getNumList() > 2) {
+        BvhNode *leftNode = (BvhNode*) leafNodes[0]->getLeft();
+        BvhNode *rightNode = (BvhNode*) leafNodes[0]->getRight();
         
         leafNodes[nLeaf++] = leftNode;
         leafNodes[nLeaf++] = rightNode;
       }
 
-      for (int i = 1; i < nLeaf; i++) {
-        leafNodes[i - 1] = leafNodes[i];
+      for (int j = 1; j < nLeaf; j++) {
+        leafNodes[j - 1] = leafNodes[j];
       }
 
       nLeaf--;
@@ -249,8 +244,6 @@ BvhNode* BvhNode::build(Hittable **objects, int n, curandState* randState) {
     for (int i = 0; i < nLeaf; i++) {
       leafNodes[i]->sortDivide(randState);
     }
-    
-    free(curNodes);
   }
 
   free(leafNodes);
@@ -270,24 +263,19 @@ BvhNode* BvhNode::build(Hittable **objects, int n) {
   leafNodes[nLeaf++] = root;
 
   while (isNotLeaf(leafNodes, nLeaf)) {
-    BvhNode **curNodes =  (BvhNode**) malloc(nLeaf * sizeof(BvhNode*));
-    int nCurNodes = 0;
-
-    for (int i = 0; i < nLeaf; i++) {
-      curNodes[nCurNodes++] = leafNodes[i];
-    }
+    int nCurNodes = nLeaf;
 
     for (int i = 0; i < nCurNodes; i++) {
-      if (curNodes[i]->getNumList() > 2) {
-        BvhNode *leftNode = (BvhNode*) curNodes[i]->getLeft();
-        BvhNode *rightNode = (BvhNode*) curNodes[i]->getRight();
+      if (leafNodes[0]->getNumList() > 2) {
+        BvhNode *leftNode = (BvhNode*) leafNodes[0]->getLeft();
+        BvhNode *rightNode = (BvhNode*) leafNodes[0]->getRight();
         
         leafNodes[nLeaf++] = leftNode;
         leafNodes[nLeaf++] = rightNode;
       }
 
-      for (int i = 1; i < nLeaf; i++) {
-        leafNodes[i - 1] = leafNodes[i];
+      for (int j = 1; j < nLeaf; j++) {
+        leafNodes[j - 1] = leafNodes[j];
       }
 
       nLeaf--;
@@ -296,8 +284,6 @@ BvhNode* BvhNode::build(Hittable **objects, int n) {
     for (int i = 0; i < nLeaf; i++) {
       leafNodes[i]->sortDivide();
     }
-    
-    free(curNodes);
   }
 
   free(leafNodes);
