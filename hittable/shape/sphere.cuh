@@ -12,10 +12,11 @@ class Sphere : public Hittable {
 
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
+    __host__ virtual Hittable* copyToDevice() override;
 
     __host__ __device__ static TextureCoordinate getUV(const Arr3 &point);
 
-  private:
+  public:
     Arr3 center;
     float radius;
     Material *material;
@@ -126,4 +127,17 @@ TextureCoordinate Sphere::getUV(const Arr3 &point) {
   textCoord.v = theta / pi;
 
   return textCoord;
+}
+
+__host__ 
+Hittable* Sphere::copyToDevice() {
+  Material *cudaMat = this->material->copyToDevice();
+  this->material = cudaMat;
+
+  Sphere *cudaHit;
+
+  cudaMalloc((void**) &cudaHit, sizeof(*this));
+  cudaMemcpy(cudaHit, this, sizeof(*this), cudaMemcpyHostToDevice);
+
+  return cudaHit;
 }

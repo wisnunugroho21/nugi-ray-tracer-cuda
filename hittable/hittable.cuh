@@ -12,4 +12,15 @@ class Hittable {
 
     __host__ __device__ virtual float numCompare(int index) const = 0;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) = 0;
+
+    __host__ virtual Hittable* copyToDevice();
 };
+
+__host__ Hittable* Hittable::copyToDevice() {
+  Hittable *cudaHit;
+
+  cudaMalloc((void**) &cudaHit, sizeof(*this));
+  cudaMemcpy(cudaHit, this, sizeof(*this), cudaMemcpyHostToDevice);
+
+  return cudaHit;
+}

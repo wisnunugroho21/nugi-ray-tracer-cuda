@@ -5,13 +5,14 @@
 
 class Lambertian : public Material {
   public:
-    __host__ __device__ Lambertian(const Arr3 &color) : texture{new Solid(color)} {}
+    __host__ __device__ Lambertian(Arr3 color) : texture{new Solid(color)} {}
     __host__ __device__ Lambertian(Texture *texture) : texture{texture} {}
 
     __device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const override;
     __host__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered) const override;
+    __host__ virtual Material* copyToDevice() override;
 
-  private:
+  public:
     Texture *texture;
 };
 
@@ -45,4 +46,17 @@ bool Lambertian::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *sc
   }
 
 	return true;
+}
+
+__host__ 
+Material* Lambertian::copyToDevice() {
+  Texture *cudaTxt = this->texture->copyToDevice();
+  this->texture = cudaTxt;
+
+  Lambertian *cudaMat;
+
+  cudaMalloc((void**) &cudaMat, sizeof(*this));
+  cudaMemcpy(cudaMat, this, sizeof(*this), cudaMemcpyHostToDevice);
+
+  return cudaMat;
 }

@@ -15,10 +15,11 @@ class MovingSphere : public Hittable {
 
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
+    __host__ virtual Hittable* copyToDevice() override;
 
     __host__ __device__ Arr3 center(float time) const;
 
-  private:
+  public:
     Arr3 center0, center1;
     float time0, time1;
     float radius;
@@ -127,4 +128,17 @@ float MovingSphere::numCompare(int index) const {
 __host__ __device__ 
 Arr3 MovingSphere::center(float time) const {
   return center0 + ((time - time0) / (time1 - time0)) * (center1 - center0);
+}
+
+__host__ 
+Hittable* MovingSphere::copyToDevice() {
+  Material *cudaMat = this->material->copyToDevice();
+  this->material = cudaMat;
+
+  MovingSphere *cudaHit;
+
+  cudaMalloc((void**) &cudaHit, sizeof(*this));
+  cudaMemcpy(cudaHit, this, sizeof(*this), cudaMemcpyHostToDevice);
+
+  return cudaHit;
 }

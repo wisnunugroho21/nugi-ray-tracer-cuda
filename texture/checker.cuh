@@ -6,11 +6,12 @@ class Checker : public Texture {
   public:
     __host__ __device__ Checker() {}
     __host__ __device__ Checker(Texture* even, Texture* odd) : even{even}, odd{odd} {}
-    __host__ __device__ Checker(const Arr3 &evenColor, const Arr3 &oddColor) : even{new Solid(evenColor)}, odd{new Solid{oddColor}} {}
+    __host__ __device__ Checker(Arr3 evenColor, Arr3 oddColor) : even{new Solid(evenColor)}, odd{new Solid{oddColor}} {}
 
-  __host__ __device__ virtual Arr3 map(float u, float v, const Arr3 &point) const override;
+    __host__ __device__ virtual Arr3 map(float u, float v, const Arr3 &point) const override;
+    __host__ Texture* copyToDevice() override;
 
-  private:
+  public:
     Texture *even;
     Texture *odd;
 };
@@ -24,4 +25,20 @@ Arr3 Checker::map(float u, float v, const Arr3 &point) const {
   }
 
   return this->even->map(u, v, point);
+}
+
+__host__ 
+Texture* Checker::copyToDevice() {
+  Texture *cudaEvenTxt = this->even->copyToDevice();
+  Texture *cudaOddTxt = this->odd->copyToDevice();
+
+  this->even = cudaEvenTxt;
+  this->odd = cudaOddTxt;
+
+  Checker *cudaTxt;
+
+  cudaMalloc((void**) &cudaTxt, sizeof(*this));
+  cudaMemcpy(cudaTxt, this, sizeof(*this), cudaMemcpyHostToDevice);
+
+  return cudaTxt;
 }

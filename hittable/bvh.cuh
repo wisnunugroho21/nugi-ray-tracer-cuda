@@ -33,6 +33,7 @@ class BvhNode :public Hittable {
 
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
+    __host__ virtual Hittable* copyToDevice() override;
 
     __device__ static BvhNode* build(Hittable **objects, int n, curandState* randState);
     __device__ void sortDivide(curandState* randState);
@@ -60,7 +61,7 @@ class BvhNode :public Hittable {
       return this->rightObject;
     }
 
-    private:
+    public:
       Hittable **objects; int nObjects;
       Hittable *leftObject, *rightObject;
       AABB nodeBox;
@@ -290,4 +291,25 @@ BvhNode* BvhNode::build(Hittable **objects, int n) {
 
   root->boundingBox(nullptr);
   return root;
+}
+
+__host__ 
+Hittable* BvhNode::copyToDevice() {
+  Hittable *cudaLeftObject = this->leftObject->copyToDevice();
+
+  if (this->leftObject != this->rightObject) {
+    Hittable *cudaRightObject = this->rightObject->copyToDevice();
+    this->rightObject = cudaRightObject;
+  } else {
+    this->rightObject = cudaLeftObject;
+  }
+  
+  this->leftObject = cudaLeftObject;  
+
+  BvhNode *cudaHit;
+
+  cudaMalloc((void**) &cudaHit, sizeof(*this));
+  cudaMemcpy(cudaHit, this, sizeof(*this), cudaMemcpyHostToDevice);
+
+  return cudaHit;
 }

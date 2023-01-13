@@ -10,8 +10,9 @@ class Isotropic :public Material {
 
     __device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const override;
     __host__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered) const override;
+    __host__ virtual Material* copyToDevice() override;
 
-  private:
+  public:
     Texture *texture;
 };
 
@@ -33,4 +34,17 @@ bool Isotropic::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *sca
   }
 
   return true;
+}
+
+__host__ 
+Material* Isotropic::copyToDevice() {
+  Texture *cudaTxt = this->texture->copyToDevice();
+  this->texture = cudaTxt;
+
+  Isotropic *cudaMat;
+
+  cudaMalloc((void**) &cudaMat, sizeof(*this));
+  cudaMemcpy(cudaMat, this, sizeof(*this), cudaMemcpyHostToDevice);
+
+  return cudaMat;
 }

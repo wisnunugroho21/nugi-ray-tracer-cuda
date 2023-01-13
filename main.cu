@@ -141,14 +141,9 @@ void sampling(Arr3 *frameBuffers, Arr3 *finalImageBuffers, int width, int height
 }
 
 __global__
-void freeWorld(Camera **cam, Hittable **hits, Material **mats, Hittable **world, int numObjects) {
+void freeWorld(Camera **cam, Hittable **world) {
 	delete cam[0];
 	delete world[0];
-
-	for (int i = 0; i < numObjects; i++) {
-		delete hits[i];
-		delete mats[i];
-	}
 }
 
 __global__
@@ -362,6 +357,27 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
   background[0] = Arr3(0.0f, 0.0f, 0.0f);
 }
 
+__host__
+void earthCPU(Camera **cam, Hittable **world, Arr3 *background) {
+  Texture *txt = new Solid(Arr3(0.2f, 0.3f, 0.1f));
+  Material *mat = new Lambertian(txt);
+
+  Hittable **hits = (Hittable**) malloc(1 * sizeof(Hittable*));
+  hits[0] = new Sphere(Arr3(0.0f, 0.0f, 0.0f), 2.0f, mat);
+
+  world[0] = BvhNode::build(hits, 1);
+
+  Arr3 lookfrom(13.0f, 2.0f, 3.0f);
+	Arr3 lookat(0.0f, 0.0f, 0.0f);
+	Arr3 vup(0.0f, 1.0f, 0.0f);
+	auto dist_to_focus = 10.0f;
+	auto aperture = 0.1f;
+	auto aspect_ratio = 1.0f;
+
+	cam[0] = new Camera(lookfrom, lookat, vup, 40.0f, aspect_ratio, aperture, dist_to_focus);
+  background[0] = Arr3(0.7f, 0.8f, 1.0f);
+}
+
 int main() {
   int scene = 1;
 
@@ -375,8 +391,6 @@ int main() {
 
 	Arr3* frameBuffers;
 	Arr3* finalImageBuffers;
-
-	curandState* globalRandState;
 	curandState* pixelRandState;
 
 	size_t fb_size = static_cast<unsigned long long>(imageWidth * imageHeight * samplePerPixel) * sizeof(Arr3);
@@ -384,82 +398,60 @@ int main() {
 	size_t pixel_rand_size = static_cast<unsigned long long>(imageWidth * imageHeight * samplePerPixel) * sizeof(curandState);
 
 	Camera** camera;
-	Hittable** hits;
-	Material** mats;
 	Hittable** world;
-  Texture** texts;
   Arr3 *background;
 
 	checkCudaErrors(cudaMallocManaged((void**)&frameBuffers, fb_size));
 	checkCudaErrors(cudaMallocManaged((void**)&finalImageBuffers, finalImage_size));
 	checkCudaErrors(cudaMalloc((void**)&pixelRandState, pixel_rand_size));
-	checkCudaErrors(cudaMalloc((void**)&globalRandState, sizeof(curandState)));
-  checkCudaErrors(cudaMalloc((void**)&background, sizeof(Arr3)));
 
   int numObjects = 0;
 
-  switch (scene){
+  switch (scene) {
     case 1:
-      numObjects = 7 * 7 + 3 + 1; break;
-  
-    case 2:
-      numObjects = 2; break;
-
-    case 3:
-      numObjects = 2; break;
-
-    case 4:
-      numObjects = 3; break;
-
-    case 5:
-      numObjects = 15; break;
-
-    case 6:
       numObjects = 1; break;
   }
 
-	checkCudaErrors(cudaMalloc((void**)&camera, sizeof(Camera*)));
-	checkCudaErrors(cudaMalloc((void**)&hits, numObjects * sizeof(Hittable*)));
-	checkCudaErrors(cudaMalloc((void**)&mats, numObjects * sizeof(Material*)));
-	checkCudaErrors(cudaMalloc((void**)&world, sizeof(Hittable*)));
-  checkCudaErrors(cudaMalloc((void**)&texts, numObjects * sizeof(Texture*)));
-
-	initGlobalRand<<<1, 1>>>(globalRandState);
-	checkCudaErrors(cudaGetLastError());
-	checkCudaErrors(cudaDeviceSynchronize());
-
-  // auto p = loadImageToCUDA("asset/earth_map.jpg");
+  camera = (Camera**) malloc(sizeof(Camera*));
+  world = (Hittable**) malloc(sizeof(Hittable*));
+  background = (Arr3*) malloc(sizeof(Arr3));
 
   switch (scene) {
     case 1:
-      randomScenes<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
-      break;
-    
-    case 2:
-      twoSpheres<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
-      break;
-
-    case 3:
-      twoPerlinSpheres<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
-      break;
-
-    case 4:
-      simpleLights<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
-      break;
-
-    case 5:
-      cornellBox<<<1, 1>>>(camera, hits, mats, world, texts, globalRandState, background);
-      break;
-
-    case 6:
-      int width, height;
-      auto data = loadImageToCUDA("earthmap.jpg", &width, &height);
-      earth<<<1, 1>>>(camera, hits, mats, world, texts, data, width, height, globalRandState, background);
+      earthCPU(camera, world, background);
       break;
   }
-	
-	checkCudaErrors(cudaGetLastError());
-	checkCudaErrors(cudaDeviceSynchronize());
+
+ 
+  Hittable* cudaWorld = world[0]->copyToDevice();
+  world[0] = cudaWorld;
+
+  Hittable **cudaWorlds;
+  checkCudaErrors(cudaMalloc((void**)&cudaWorlds, sizeof(Hittable*)));
+  checkCudaErrors(cudaMemcpy(cudaWorlds, world, sizeof(Hittable*), cudaMemcpyHostToDevice));
+  world = cudaWorlds;
+
+
+  Camera** cudaCameras;
+  Camera* cudaCamera;
+
+  checkCudaErrors(cudaMalloc((void**)&cudaCameras, sizeof(Camera*)));
+  checkCudaErrors(cudaMalloc((void**)&cudaCamera, sizeof(Camera)));
+
+  checkCudaErrors(cudaMemcpy(cudaCamera, camera[0], sizeof(Camera), cudaMemcpyHostToDevice));
+  camera[0] = cudaCamera;
+
+  checkCudaErrors(cudaMemcpy(cudaCameras, camera, sizeof(Camera*), cudaMemcpyHostToDevice));
+  camera = cudaCameras;
+
+
+  Arr3 *cudaBackground;
+
+  checkCudaErrors(cudaMalloc((void**)&cudaBackground, sizeof(Arr3)));
+  checkCudaErrors(cudaMemcpy(cudaBackground, background, sizeof(Arr3), cudaMemcpyHostToDevice));
+
+  background = cudaBackground;
+  
 
 	std::cerr << "\rrendering" << std::flush;
 
@@ -496,15 +488,12 @@ int main() {
 	}
 
 	checkCudaErrors(cudaDeviceSynchronize());
-	freeWorld<<<1, 1>>>(camera, hits, mats, world, numObjects);
+	freeWorld<<<1, 1>>>(camera, world);
 	checkCudaErrors(cudaGetLastError());
 
 	checkCudaErrors(cudaFree(camera));
 	checkCudaErrors(cudaFree(world));
-	checkCudaErrors(cudaFree(mats));
-	checkCudaErrors(cudaFree(hits));
 	checkCudaErrors(cudaFree(pixelRandState));
-	checkCudaErrors(cudaFree(globalRandState));
   checkCudaErrors(cudaFree(finalImageBuffers));
 	checkCudaErrors(cudaFree(frameBuffers));
 

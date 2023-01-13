@@ -11,4 +11,16 @@ class Material {
     __host__ __device__ virtual Arr3 emitted(float u, float v, const Arr3 &point) const {
       return Arr3(0.0f, 0.0f, 0.0f);
     }
+
+    __host__ virtual Material* copyToDevice();
 };
+
+__host__ 
+Material* Material::copyToDevice() {
+  Material *cudaMat;
+
+  cudaMalloc((void**) &cudaMat, sizeof(*this));
+  cudaMemcpy(cudaMat, this, sizeof(*this), cudaMemcpyHostToDevice);
+
+  return cudaMat;
+}

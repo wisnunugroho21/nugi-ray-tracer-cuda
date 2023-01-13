@@ -12,8 +12,9 @@ class HittableList : public Hittable {
 
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *outputBox) override;
+    __host__ virtual Hittable* copyToDevice() override;
 
-  private:
+  public:
     Hittable **objects;
     int n;
 };
@@ -109,4 +110,23 @@ float HittableList::numCompare(int index) const {
   }
 
   return minNum;
+}
+
+__host__ 
+Hittable* HittableList::copyToDevice() {
+  for (int i = 0; i < this->n; i++) {
+    this->objects[i] = this->objects[i]->copyToDevice();
+  }
+
+  Hittable **cudaObjects;
+  cudaMalloc((void**) &cudaObjects, sizeof(this->objects));
+  cudaMemcpy(cudaObjects, this, sizeof(this->objects), cudaMemcpyHostToDevice);
+
+  this->objects = cudaObjects;
+  HittableList *cudaHit;
+
+  cudaMalloc((void**) &cudaHit, sizeof(*this));
+  cudaMemcpy(cudaHit, this, sizeof(*this), cudaMemcpyHostToDevice);
+
+  return cudaHit;
 }

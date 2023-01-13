@@ -4,14 +4,14 @@
 
 class Metal : public Material {
 	public:
-		__host__ __device__ Metal(const Arr3 &colorAlbedo, float fuzziness) : colorAlbedo{colorAlbedo} {
+		__host__ __device__ Metal(Arr3 colorAlbedo, float fuzziness) : colorAlbedo{colorAlbedo} {
 			this->fuzziness = (fuzziness < 1.0f) ? fuzziness : 1.0f;
 		}
 
     __device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const override;
     __host__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered) const override;
 
-    private:
+    public:
 			Arr3 colorAlbedo;
 			float fuzziness;
 };

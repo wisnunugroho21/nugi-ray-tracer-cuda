@@ -13,8 +13,9 @@ class YZRect : public Hittable {
 
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
+    __host__ virtual Hittable* copyToDevice() override;
 
-  private:
+  public:
     float y0, y1, z0, z1, k;
     Material *material;
 };
@@ -95,4 +96,17 @@ bool YZRect::boundingBox(BoundingRecord *box) {
   }
   
   return true;
+}
+
+__host__ 
+Hittable* YZRect::copyToDevice() {
+  Material *cudaMat = this->material->copyToDevice();
+  this->material = cudaMat;
+
+  YZRect *cudaHit;
+
+  cudaMalloc((void**) &cudaHit, sizeof(*this));
+  cudaMemcpy(cudaHit, this, sizeof(*this), cudaMemcpyHostToDevice);
+
+  return cudaHit;
 }

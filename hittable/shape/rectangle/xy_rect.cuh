@@ -13,6 +13,7 @@ class XYRect : public Hittable {
 
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
+    __host__ virtual Hittable* copyToDevice() override;
 
   private:
     float x0, x1, y0, y1, k;
@@ -95,4 +96,17 @@ bool XYRect::boundingBox(BoundingRecord *box) {
   }
   
   return true;
+}
+
+__host__ 
+Hittable* XYRect::copyToDevice() {
+  Material *cudaMat = this->material->copyToDevice();
+  this->material = cudaMat;
+
+  XYRect *cudaHit;
+
+  cudaMalloc((void**) &cudaHit, sizeof(*this));
+  cudaMemcpy(cudaHit, this, sizeof(*this), cudaMemcpyHostToDevice);
+
+  return cudaHit;
 }

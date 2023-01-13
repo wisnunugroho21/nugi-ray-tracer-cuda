@@ -17,12 +17,12 @@ class Box : public Hittable {
 
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *box) override;
+    __host__ virtual Hittable* copyToDevice() override;
 
-  private:
+  public:
     Arr3 minBoxPoint;
     Arr3 maxBoxPoint;
 
-    Hittable **itemSides;
     HittableList *sides;
 };
 
@@ -31,7 +31,7 @@ Box::Box(Arr3 minBoxPoint, Arr3 maxBoxPoint, Material *material) {
   this->minBoxPoint = minBoxPoint;
   this->maxBoxPoint = maxBoxPoint;
 
-  itemSides = (Hittable**) malloc(6 * sizeof(Hittable*));
+  Hittable** itemSides = (Hittable**) malloc(6 * sizeof(Hittable*));
 
   itemSides[0] = new XYRect(minBoxPoint.x(), maxBoxPoint.x(), minBoxPoint.y(), maxBoxPoint.y(), maxBoxPoint.z(), material);
   itemSides[1] = new XYRect(minBoxPoint.x(), maxBoxPoint.x(), minBoxPoint.y(), maxBoxPoint.y(), minBoxPoint.z(), material);
@@ -69,4 +69,16 @@ bool Box::boundingBox(BoundingRecord *box) {
   return true;
 }
 
+__host__ 
+Hittable* Box::copyToDevice() {
+  HittableList *cudaSides = (HittableList*) this->sides->copyToDevice();
+  this->sides = cudaSides;
+
+  Box *cudaHit;
+
+  cudaMalloc((void**) &cudaHit, sizeof(*this));
+  cudaMemcpy(cudaHit, this, sizeof(*this), cudaMemcpyHostToDevice);
+
+  return cudaHit;
+}
 
