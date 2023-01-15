@@ -11,7 +11,10 @@ class Lambertian : public Material {
     __host__ __device__ Lambertian(Texture *texture) : texture{texture} {}
 
     __device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const override;
+    __host__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered) const override;
+    
     __device__ virtual float scatteringPdf(const Ray &ray, const HitRecord &hit, const Ray &scatteredRay, curandState* randState) const override;
+    
 
   private:
     Texture *texture;
@@ -19,13 +22,22 @@ class Lambertian : public Material {
 
 __device__
 bool Lambertian::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const {
-  ONB uvw;
-  uvw.buildFromW(hit.faceNormal.normal);
-  auto scatterDirection = uvw.local(randomCosineDirection(randState));
+  if (scattered != nullptr && scattered != NULL) {
+    scattered->specular.isSpecular = false;
+    scattered->colorAttenuation = this->texture->map(hit.textCoord.u, hit.textCoord.v, hit.point);
+    scattered->pdf = CosinePdf(hit.faceNormal.normal);
+  }
 
-	scattered->specular.isSpecular = false;
-	scattered->colorAttenuation = this->texture->map(hit.textCoord.u, hit.textCoord.v, hit.point);
-  scattered->pdf = CosinePdf(hit.faceNormal.normal);
+	return true;
+}
+
+__host__ 
+bool Lambertian::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered) const {
+  if (scattered != nullptr && scattered != NULL) {
+    scattered->specular.isSpecular = false;
+    scattered->colorAttenuation = this->texture->map(hit.textCoord.u, hit.textCoord.v, hit.point);
+    scattered->pdf = CosinePdf(hit.faceNormal.normal);
+  }
 
 	return true;
 }

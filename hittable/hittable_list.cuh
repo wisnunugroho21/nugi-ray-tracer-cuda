@@ -8,7 +8,9 @@ class HittableList : public Hittable {
     __host__ __device__ HittableList() {}
     __host__ __device__ HittableList(Hittable **objects, int n) : objects{objects}, n{n} {}
 
-    __host__ __device__ virtual bool hit(const Ray &r, float t_min, float t_max, HitRecord *rec, MaterialRecord *mat) const override;
+    __device__ virtual bool hit(const Ray &r, float t_min, float t_max, HitRecord *rec, MaterialRecord *mat, curandState* randState) const override;
+    __host__ virtual bool hit(const Ray &r, float t_min, float t_max, HitRecord *rec, MaterialRecord *mat) const override;
+
     __host__ __device__ virtual float numCompare(int index) const override;
     __host__ __device__ virtual bool boundingBox(BoundingRecord *outputBox) override;
 
@@ -20,7 +22,36 @@ class HittableList : public Hittable {
     int n;
 };
 
-__host__ __device__
+__device__
+bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat, curandState* randState) const {
+  MaterialRecord tempMat;
+  HitRecord tempHit;
+
+  bool isHitAnything = false;
+  float tClosest = tMax;
+
+  for (int i = 0; i < this->n; i++) {
+    if (this->objects[i]->hit(r, tMin, tClosest, &tempHit, &tempMat, randState)) {
+      isHitAnything = true;
+      tClosest = tempHit.t;
+
+      if (hit != nullptr && hit != NULL) {
+        hit->textCoord = tempHit.textCoord;
+        hit->faceNormal = tempHit.faceNormal;
+        hit->point = tempHit.point;
+        hit->t = tempHit.t;
+      }
+
+      if (mat != nullptr && mat != NULL) {
+        mat->material = tempMat.material;
+      }
+    }
+  }
+
+  return isHitAnything;
+}
+
+__host__
 bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, MaterialRecord *mat) const {
   MaterialRecord tempMat;
   HitRecord tempHit;
@@ -33,12 +64,16 @@ bool HittableList::hit(const Ray &r, float tMin, float tMax, HitRecord *hit, Mat
       isHitAnything = true;
       tClosest = tempHit.t;
 
-      hit->textCoord = tempHit.textCoord;
-      hit->faceNormal = tempHit.faceNormal;
-      hit->point = tempHit.point;
-      hit->t = tempHit.t;
+      if (hit != nullptr && hit != NULL) {
+        hit->textCoord = tempHit.textCoord;
+        hit->faceNormal = tempHit.faceNormal;
+        hit->point = tempHit.point;
+        hit->t = tempHit.t;
+      }
 
-      mat->material = tempMat.material;
+      if (mat != nullptr && mat != NULL) {
+        mat->material = tempMat.material;
+      }
     }
   }
 
@@ -54,7 +89,10 @@ bool HittableList::boundingBox(BoundingRecord *outputBox) {
 
   for (int i = 0; i < this->n; i++) {
     if (this->objects[n]->boundingBox(&tempBox)) {
-      outputBox->boundingBox = firstBox ? tempBox.boundingBox : AABB::surrondingBox(outputBox->boundingBox, tempBox.boundingBox);
+      if (outputBox != nullptr && outputBox != NULL) {
+        outputBox->boundingBox = firstBox ? tempBox.boundingBox : AABB::surrondingBox(outputBox->boundingBox, tempBox.boundingBox);
+      }
+      
       firstBox = false;
     }
   }
@@ -64,9 +102,9 @@ bool HittableList::boundingBox(BoundingRecord *outputBox) {
 
 __host__ __device__ 
 float HittableList::numCompare(int index) const {
-  if (this->objects == NULL || this->n == 0) return -99;
+  if (this->objects == NULL || this->n == 0) return -9999.0f;
 
-  float minNum = 99;
+  float minNum = 9999.0f;
 
   for (int i = 0; i < this->n; i++) {
     if (this->objects[i]->numCompare(index) < minNum) {

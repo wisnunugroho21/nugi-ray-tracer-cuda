@@ -9,6 +9,7 @@ class Metal : public Material {
 		}
 
     __device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const override;
+    __host__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered) const override;
 
     private:
 			Arr3 colorAlbedo;
@@ -19,10 +20,26 @@ __device__
 bool Metal::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const {
 	Arr3 reflected = Arr3::reflect(ray.direction().unitVector(), hit.faceNormal.normal);
 
-	scattered->specular.ray = Ray(hit.point, reflected + this->fuzziness * Arr3::randomInUnitSphere(randState), ray.time());
-  scattered->specular.isSpecular = true;
+  if (scattered != nullptr && scattered != NULL) {
+    scattered->specular.ray = Ray(hit.point, reflected + this->fuzziness * Arr3::randomInUnitSphere(randState), ray.time());
+    scattered->specular.isSpecular = true;
 
-	scattered->colorAttenuation = this->colorAlbedo;
+    scattered->colorAttenuation = this->colorAlbedo;
+  }
 
-	return Arr3::dot(scattered->specular.ray.direction(), hit.faceNormal.normal) > 0;
+	return Arr3::dot(scattered->specular.ray.direction(), hit.faceNormal.normal) > 0.0f;
+}
+
+__host__
+bool Metal::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered) const {
+	Arr3 reflected = Arr3::reflect(ray.direction().unitVector(), hit.faceNormal.normal);
+
+  if (scattered != nullptr && scattered != NULL) {
+    scattered->specular.ray = Ray(hit.point, reflected + this->fuzziness * Arr3::randomInUnitSphere(), ray.time());
+    scattered->specular.isSpecular = true;
+
+    scattered->colorAttenuation = this->colorAlbedo;
+  }
+
+	return Arr3::dot(scattered->specular.ray.direction(), hit.faceNormal.normal) > 0.0f;
 }

@@ -399,7 +399,7 @@ Arr3 Arr3::reflect(const Arr3 &v, const Arr3 &n) {
 
 __host__ __device__ 
 Arr3  Arr3::refract(const Arr3 &uv, const Arr3 &n, float etaiOverEtat) {
-	auto cosTheta = fmin(Arr3::dot(-uv, n), 1.0f);
+	auto cosTheta = fminf(Arr3::dot(-uv, n), 1.0f);
 	Arr3 rayOutPerp = etaiOverEtat * (uv + cosTheta * n);
 	Arr3 rayOutParallel = -1.0f * sqrtf(fabs(1.0f - rayOutPerp.lengthSquared())) * n;
 	return rayOutPerp + rayOutParallel;

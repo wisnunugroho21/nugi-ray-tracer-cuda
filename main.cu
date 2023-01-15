@@ -64,7 +64,7 @@ Arr3 tracing(const Ray &r, Hittable **world, Hittable **lightLists, const Arr3 &
   );
 
 	for (int i = 0; i < 50; i++) {
-    if (!world[0]->hit(curRay, 0.001f, FLT_MAX, &hit, &mat)) {
+    if (!world[0]->hit(curRay, 0.001f, FLT_MAX, &hit, &mat, randState)) {
       lastNum = Arr4(background.x(), background.y(), background.z(), 1.0f);
       break;
     }
@@ -147,8 +147,8 @@ void render(Arr3 *frameBuffer, int width, int height, int nSample, Arr3 *backgro
 	Arr3 color(0.0f, 0.0f, 0.0f);
 	auto localRandState = randState[pixelIndex];
 
-	auto u = float(i + randomFloat(&localRandState)) / (width - 1);
-	auto v = float(j + randomFloat(&localRandState)) / (height - 1);
+	auto u = float(i + randomFloat(&localRandState)) / (width - 1.0f);
+	auto v = float(j + randomFloat(&localRandState)) / (height - 1.0f);
 
 	Ray r = cam[0]->transform(u, v, &localRandState);
 	color += tracing(r, world, lightList, background[0], &localRandState);
@@ -222,8 +222,8 @@ void randomScenes(Camera **cam, Hittable **hits, Material **mats, Hittable **wor
 
 	int objIndex = 1;
 
-	for (int a = -11; a < 11; a++) {
-		for (int b = -11; b < 11; b++) {
+	for (int a = -7; a < 7; a++) {
+		for (int b = -7; b < 7; b++) {
 			auto choose_mat = randomFloat(&localRandState);
 			Arr3 center(a + 0.9f * randomFloat(&localRandState), 0.2f, b + 0.9f * randomFloat(&localRandState));
 
@@ -348,6 +348,8 @@ __global__
 void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, Hittable **lights, Hittable **lightLists, curandState *randState, Arr3 *background) {
   auto localRandState = randState[0];
 
+  texts[0] = new Solid(Arr3(1.0f, 1.0f, 1.0f));
+
   mats[0] = new Lambertian(Arr3(0.65f, 0.05f, 0.05f));
   mats[1] = new Lambertian(Arr3(0.73f, 0.73f, 0.73f));
   mats[2] = new Lambertian(Arr3(0.12f, 0.45f, 0.15f));
@@ -425,7 +427,7 @@ int main() {
 
   switch (scene){
     case 1:
-      numObjects = 22 * 22 + 3 + 1; break;
+      numObjects = 7 * 7 + 3 + 1; break;
   
     case 2:
       numObjects = 2; break;
@@ -453,6 +455,7 @@ int main() {
 	checkCudaErrors(cudaDeviceSynchronize());
 
   // auto p = loadImageToCUDA("asset/earth_map.jpg");
+  unsigned char *data;
 
   switch (scene) {
     case 1:

@@ -14,7 +14,9 @@ __host__ float randomFloat(float min, float max);
 __host__ __device__ float clamp(float value, float min, float max);
 
 __host__ __device__ float degreesToRadians(float degrees);
+
 __device__ int randInt(int min, int max, curandState *randState);
+__host__ int randInt(int min, int max);
 
 __device__
 float randomFloat(curandState *randState) {
@@ -51,4 +53,9 @@ float degreesToRadians(float degrees) {
 __device__
 int randInt(int min, int max, curandState *randState) {
 	return static_cast<int>(randomFloat(min, max, randState));
+}
+
+__host__
+int randInt(int min, int max) {
+	return static_cast<int>(randomFloat(min, max + 1));
 }

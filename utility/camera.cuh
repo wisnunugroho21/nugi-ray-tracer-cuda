@@ -12,6 +12,7 @@ public:
     float focusDist, float time0 = 0.0f, float time1 = 0.0f);
 	
   __device__ Ray transform(float xScreen, float yScreen, curandState* randState);
+  __host__ Ray transform(float xScreen, float yScreen);
 
   private:
 	Arr3 origin;
@@ -30,7 +31,7 @@ Camera::Camera(
   float focusDist,float time0, float time1
 ) {
 	double theta = degreesToRadians(vfov);
-	double height = tan(theta / 2);
+	double height = tanf(theta / 2.0f);
 	double viewportHeight = 2.0 * height;
 	double viewportWidth = aspectRatio * viewportHeight;
 
@@ -41,9 +42,9 @@ Camera::Camera(
 	this->origin = lookfrom;
 	this->horizontal = focusDist * viewportWidth * this->u;
 	this->vertical = focusDist * viewportHeight * this->v;
-	this->lowerLeftCorner = origin - horizontal / 2 - vertical / 2 - focusDist * this->w;
+	this->lowerLeftCorner = origin - horizontal / 2.0f - vertical / 2.0f - focusDist * this->w;
 
-	this->lensRadius = aperture / 2;
+	this->lensRadius = aperture / 2.0f;
 }
 
 __device__
@@ -55,5 +56,17 @@ Ray Camera::transform(float xScreen, float yScreen, curandState* randState) {
 		this->origin + offset, 
 		this->lowerLeftCorner + xScreen * this->horizontal + yScreen * this->vertical - this->origin - offset,
     randomFloat(this->time0, this->time1, randState)
+	);
+}
+
+__host__ 
+Ray Camera::transform(float xScreen, float yScreen) {
+  Arr3 radius = this->lensRadius * Arr3::randomInUnitDisk();
+	Arr3 offset = this->u * radius.x() + this->v * radius.y();
+
+	return Ray(
+		this->origin + offset, 
+		this->lowerLeftCorner + xScreen * this->horizontal + yScreen * this->vertical - this->origin - offset,
+    randomFloat(this->time0, this->time1)
 	);
 }
