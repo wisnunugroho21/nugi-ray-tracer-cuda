@@ -18,7 +18,8 @@ class Isotropic :public Material {
 __device__ 
 bool Isotropic::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const {
   if (scattered != nullptr && scattered != NULL) {
-    scattered->newRay = Ray(hit.point, Arr3::randomInUnitSphere(randState), ray.time());
+    scattered->specular.isSpecular = true;
+    scattered->specular.ray = Ray(hit.point, Arr3::randomInUnitSphere(randState), ray.time());
     scattered->colorAttenuation = this->texture->map(hit.textCoord.u, hit.textCoord.v, hit.point);
   }
 
@@ -28,7 +29,8 @@ bool Isotropic::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *sca
 __host__ 
 bool Isotropic::scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered) const {
   if (scattered != nullptr && scattered != NULL) {
-    scattered->newRay = Ray(hit.point, Arr3::randomInUnitSphere(), ray.time());
+    scattered->specular.isSpecular = true;
+    scattered->specular.ray = Ray(hit.point, Arr3::randomInUnitSphere(), ray.time());
     scattered->colorAttenuation = this->texture->map(hit.textCoord.u, hit.textCoord.v, hit.point);
   }
 

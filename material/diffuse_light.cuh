@@ -12,7 +12,7 @@ class DiffuseLight : public Material {
     __device__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered, curandState* randState) const override;
     __host__ virtual bool scatter(const Ray &ray, const HitRecord &hit, ScatterRecord *scattered) const override;
 
-    __host__ __device__ virtual Arr3 emitted(float u, float v, const Arr3 &point) const override;
+    __host__ __device__ virtual Arr3 emitted(const Ray &ray, const HitRecord &hit) const override;
 
   private:
     Texture *emit;
