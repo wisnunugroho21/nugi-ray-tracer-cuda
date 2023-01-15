@@ -348,8 +348,6 @@ __global__
 void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world, Texture **texts, Hittable **lights, Hittable **lightLists, curandState *randState, Arr3 *background) {
   auto localRandState = randState[0];
 
-  texts[0] = new Solid(Arr3(1.0f, 1.0f, 1.0f));
-
   mats[0] = new Lambertian(Arr3(0.65f, 0.05f, 0.05f));
   mats[1] = new Lambertian(Arr3(0.73f, 0.73f, 0.73f));
   mats[2] = new Lambertian(Arr3(0.12f, 0.45f, 0.15f));
@@ -359,17 +357,18 @@ void cornellBox(Camera **cam, Hittable **hits, Material **mats, Hittable **world
 
   hits[0] = new YZRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[2]);
   hits[1] = new YZRect(0.0f, 555.0f, 0.0f, 555.0f, 0.0f, mats[0]);
-  hits[12] = new XZRect(213.0f, 343.0f, 227.0f, 332.0f, 554.0f, mats[3]);
-  hits[2] = new FlipFace(hits[12]);
+  hits[2] = new FlipFace(hits[10]);
   hits[3] = new XZRect(0.0f, 555.0f, 0.0f, 555.0f, 0.0f, mats[1]);
   hits[4] = new XZRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[1]);
   hits[5] = new XYRect(0.0f, 555.0f, 0.0f, 555.0f, 555.0f, mats[1]);
 
+  hits[6] = new Translation(hits[9], Arr3(265.0f, 0.0f, 295.0f));
+  hits[7] = new Sphere(Arr3(190.0f, 90.0f, 190.f), 90.0f, mats[5]);
+  
+
   hits[8] = new Box(Arr3(0.0f, 0.0f, 0.0f), Arr3(165.0f, 330.0f, 165.0f), mats[4]);
   hits[9] = new RotationY(hits[8], 15.0f);
-  hits[6] = new Translation(hits[9], Arr3(265.0f, 0.0f, 295.0f));
-
-  hits[7] = new Sphere(Arr3(190.0f, 90.0f, 190.f), 90.0f, mats[5]);
+  hits[10] = new XZRect(213.0f, 343.0f, 227.0f, 332.0f, 554.0f, mats[3]);
 
   world[0] = BvhNode::build(hits, 8, &localRandState);
   lights[0] = new XZRect(213.0f, 343.0f, 227.0f, 332.0f, 554.0f, mats[0]);
